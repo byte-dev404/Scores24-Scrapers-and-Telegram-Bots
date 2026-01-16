@@ -1,0 +1,7 @@
+python-telegram-bot==20.7
+timezonefinder==8.2.0
+requests==2.32.5
+inquirerpy==0.3.4
+dotenv==0.9.9
+tzdata==2025.3
+httpx==0.28.1
