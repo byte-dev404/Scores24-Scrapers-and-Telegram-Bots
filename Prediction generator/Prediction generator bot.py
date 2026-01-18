@@ -109,3 +109,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
+
+async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
