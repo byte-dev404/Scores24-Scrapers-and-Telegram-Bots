@@ -3,6 +3,8 @@ import json
 import httpx
 import logging
 from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
 
 ''' Get the bot token either from the .env file ''' 
 load_dotenv()
@@ -95,3 +97,42 @@ json_data = {
     },
 }
 
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# Basic commnads 
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
+
+async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
+
+async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
+
+def main():
+    print("Booting up the bot")
+    application = ApplicationBuilder().token(bot_token).build()
+
+    # Handlers
+    start_handler = CommandHandler("start", start_command)
+    help_handler = CommandHandler("help", help_command)
+    contact_handler = CommandHandler("contact", contact_command)
+    unknown_handler = MessageHandler(filters.Command, unknown_command)
+
+    # Attach handlers to bot
+    application.add_handler(start_handler)
+    application.add_handler(help_handler)
+    application.add_handler(contact_handler)
+
+    # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
+    application.add_handler(unknown_handler)
+
+    print("Bot successfully initialized, now listening for inputs...")
+    application.run_polling() # Starts the bot for listening updates/messages
+
+if __name__ == "__main__":
+    main()
