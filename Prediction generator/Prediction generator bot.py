@@ -118,13 +118,14 @@ def main():
     application = ApplicationBuilder().token(bot_token).build()
 
     # Handlers
-
+    start_handler = CommandHandler("start", start_command)
+    help_handler = CommandHandler("help", help_command)
+    contact_handler = CommandHandler("contact", contact_command)
+    unknown_handler = MessageHandler(filters.Command, unknown_command)
 
     # Attach handlers to bot
 
-
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
-    
 
     print("Bot successfully initialized, now listening for inputs...")
     application.run_polling()
