@@ -112,3 +112,22 @@ async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
+
+def main():
+    print("Booting up the bot")
+    application = ApplicationBuilder().token(bot_token).build()
+
+    # Handlers
+
+
+    # Attach handlers to bot
+
+
+    # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
+    
+
+    print("Bot successfully initialized, now listening for inputs...")
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
