@@ -124,11 +124,15 @@ def main():
     unknown_handler = MessageHandler(filters.Command, unknown_command)
 
     # Attach handlers to bot
+    application.add_handler(start_handler)
+    application.add_handler(help_handler)
+    application.add_handler(contact_handler)
 
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
+    application.add_handler(unknown_handler)
 
     print("Bot successfully initialized, now listening for inputs...")
-    application.run_polling()
+    application.run_polling() # Starts the bot for listening updates/messages
 
 if __name__ == "__main__":
     main()
