@@ -3,6 +3,8 @@ import json
 import httpx
 import logging
 from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
 
 ''' Get the bot token either from the .env file ''' 
 load_dotenv()
@@ -94,4 +96,3 @@ json_data = {
         'timezoneOffset': 330,
     },
 }
-
