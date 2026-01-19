@@ -113,6 +113,17 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
 
+# Main prediction command
+async def generate_prediction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
+    context.user_data["mode"] = None
+    context.user_data["time"] = None
+
+    try:
+        await update.message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
+    except TimedOut:
+        pass
+
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
