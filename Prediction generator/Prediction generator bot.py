@@ -304,12 +304,20 @@ def main():
     start_handler = CommandHandler("start", start_command)
     help_handler = CommandHandler("help", help_command)
     contact_handler = CommandHandler("contact", contact_command)
+    generate_prediction_handler = CommandHandler("generate_predictions", generate_prediction_command)
+    mode_selection_handler = CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)")
+    time_selection_handler = CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)")
+    sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
     unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
 
     # Attach handlers to bot
     application.add_handler(start_handler)
     application.add_handler(help_handler)
     application.add_handler(contact_handler)
+    application.add_handler(generate_prediction_handler)
+    application.add_handler(mode_selection_handler)
+    application.add_handler(time_selection_handler)
+    application.add_handler(sport_selection_handler)
     application.add_error_handler(error_handler)
 
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
