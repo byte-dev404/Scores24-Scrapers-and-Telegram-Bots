@@ -103,6 +103,23 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+# Helper functions to build keyboard/buttons
+def build_mode_keyboard(selected_mode: Optional[str]):
+    keyborad = []
+    row = []
+
+    for mode in mode_options:
+        label = f"✅ {mode}" if mode == selected_mode else mode
+        row.append(InlineKeyboardButton(label, callback_data=f"mode: {mode}"))
+
+        if len(row) == 2:
+            keyborad.append(row)
+            row = []
+    if row:
+        keyborad.append(row)
+
+    return InlineKeyboardMarkup(keyborad)
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
