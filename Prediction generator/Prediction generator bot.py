@@ -2,7 +2,10 @@ import os
 import json
 import httpx
 import logging
+from datetime import datetime
+from typing import Optional
 from dotenv import load_dotenv
+from telegram.error import TimedOut
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
 
@@ -18,7 +21,7 @@ if not bot_token:
 
 # Predefined messages for commands
 start_msg = "Hi, I'm Scores24 Prediction Generator Bot.\nDo /help to see the full list of commands"
-help_msg = "Here's the full list of commands that might help.\n\n/start - To start the conversation with bot\n/help - To see all commands and get help\n/contact - To contact my creator\n/generate_prediction - To generate predictions\n\nIf the above doesn't help, you might wanna contact my creator, for that do /contact"
+help_msg = "Here's the full list of commands that might help.\n\n/start - To start the conversation with bot\n/help - To see all commands and get help\n/contact - To contact my creator\n/generate_predictions - To generate predictions\n\nIf the above doesn't help, you might wanna contact my creator, for that do /contact"
 contact_msg = "Contact my creator Mr. Vishwas Batra,\nHere on LinkedIn: https://www.linkedin.com/in/vishwas-batra/"
 unknown_msg = "Sorry, I didn't understand that command, maybe because this command is not defined.\nContact the developer via /contact command, if you want to add new features."
 
@@ -110,8 +113,19 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
 
+# Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
+
+# Error handler
+async def error_handler(update: Optional[Update], context: ContextTypes.DEFAULT_TYPE):
+    logging.exception("Unhandled error", exc_info=context.error)
+
+    if update and update.effective_chat:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, 
+            text="An internal error occurred. Please try again later."
+            )
 
 def main():
     print("Booting up the bot")
@@ -121,12 +135,13 @@ def main():
     start_handler = CommandHandler("start", start_command)
     help_handler = CommandHandler("help", help_command)
     contact_handler = CommandHandler("contact", contact_command)
-    unknown_handler = MessageHandler(filters.Command, unknown_command)
+    unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
 
     # Attach handlers to bot
     application.add_handler(start_handler)
     application.add_handler(help_handler)
     application.add_handler(contact_handler)
+    application.add_error_handler(error_handler)
 
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
     application.add_handler(unknown_handler)
