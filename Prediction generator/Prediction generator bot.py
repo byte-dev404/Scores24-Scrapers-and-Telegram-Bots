@@ -141,6 +141,28 @@ async def generate_prediction_command(update: Update, context: ContextTypes.DEFA
     except TimedOut:
         pass
 
+# Follow-up queries handlers for custom prediction
+async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    _, mode = query.data.split(": ")
+    context.user_data["mode"] = mode
+
+    if mode == "Best":
+        await query.message.delete()
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating best predictions…")
+        context.application.create_task(fetch_prediction(query, context))
+        return
+    
+    if not context.user_data.get("mode"):
+        await query.answer("Select a prediction mode!", show_alert=True)
+        return
+    
+    context.user_data["time"] = None  
+    await query.edit_message_text(text=f"Now select a time:", reply_markup=build_time_keyboard(None))
+    return
+
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
