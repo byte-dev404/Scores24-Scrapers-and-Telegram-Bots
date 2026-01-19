@@ -179,6 +179,30 @@ async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TY
     context.user_data["time"] = None  
     await query.edit_message_text(text=f"Now select a time:", reply_markup=build_time_keyboard(None))
     return
+    
+async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_data = query.data
+
+    if user_data.startswith("time:"):
+        _, time_value = user_data.split(": ")
+        context.user_data["time"] = time_value
+
+        await query.edit_message_reply_markup(reply_markup=build_time_keyboard(time_value))
+        return   
+
+    if user_data == "time_next":
+        if not context.user_data.get("time"):
+            await query.answer("Select a time option!", show_alert=True)
+            return
+            
+        context.user_data["sports"] = set()
+        sports_keyboard = build_sports_keyboard(context.user_data["sports"])
+
+        await query.edit_message_text(text=f"Now select one or more sports:", reply_markup=sports_keyboard)
+        return
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
