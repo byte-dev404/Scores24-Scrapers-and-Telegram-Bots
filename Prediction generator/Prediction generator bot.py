@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import Optional
 from dotenv import load_dotenv
 from telegram.error import TimedOut
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
+from telegram import Update,  InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, filters, MessageHandler
 
 ''' Get the bot token either from the .env file ''' 
 load_dotenv()
@@ -103,6 +103,63 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+# Helper functions to build keyboard/buttons
+def build_mode_keyboard(selected_mode: Optional[str]):
+    keyborad = []
+    row = []
+
+    for mode in mode_options:
+        label = f"✅ {mode}" if mode == selected_mode else mode
+        row.append(InlineKeyboardButton(label, callback_data=f"mode: {mode}"))
+
+        if len(row) == 2:
+            keyborad.append(row)
+            row = []
+    if row:
+        keyborad.append(row)
+
+    return InlineKeyboardMarkup(keyborad)
+
+def build_time_keyboard(selected_time: Optional[str]):
+    keyboard = []
+    row = []
+
+    for time_option in time_options:
+        label = f"✅ {time_option}" if time_option == selected_time else f"⬜ {time_option}"
+        row.append(InlineKeyboardButton(label, callback_data=f"time: {time_option}"))
+
+        if len(row) == 3:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+
+    keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="time_next")])
+    return InlineKeyboardMarkup(keyboard)
+
+def build_sports_keyboard(selected_sport: Optional[str]):
+    keyboard = []
+    row = []
+
+    is_all_active = not selected_sport
+
+    for sport in sport_options:
+        if sport == "all":
+            label = f"✅ All" if is_all_active else "⬜ All"
+        else:
+            label = f"✅ {sport.title()}" if sport in selected_sport else f"⬜ {sport.title()}"
+
+        row.append(InlineKeyboardButton(label, callback_data=f"sport:{sport}"))
+
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+
+    keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="sport_next")])
+    return InlineKeyboardMarkup(keyboard)
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
@@ -112,6 +169,118 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
+
+# Main prediction command
+async def generate_prediction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
+    context.user_data["mode"] = None
+    context.user_data["time"] = None
+
+    try:
+        await update.message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
+    except TimedOut:
+        pass
+
+# Follow-up queries handlers for custom prediction
+async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    _, mode = query.data.split(": ")
+    context.user_data["mode"] = mode
+
+    if mode == "Best":
+        await query.message.delete()
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating best predictions…")
+        context.application.create_task(fetch_prediction(query, context))
+        return
+    
+    if not context.user_data.get("mode"):
+        await query.answer("Select a prediction mode!", show_alert=True)
+        return
+    
+    context.user_data["time"] = None  
+    await query.edit_message_text(text=f"Now select a time:", reply_markup=build_time_keyboard(None))
+    return
+    
+async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_data = query.data
+
+    if user_data.startswith("time:"):
+        _, time_value = user_data.split(": ")
+        context.user_data["time"] = time_value
+
+        await query.edit_message_reply_markup(reply_markup=build_time_keyboard(time_value))
+        return   
+
+    if user_data == "time_next":
+        if not context.user_data.get("time"):
+            await query.answer("Select a time option!", show_alert=True)
+            return
+            
+        context.user_data["sports"] = set()
+        sports_keyboard = build_sports_keyboard(context.user_data["sports"])
+
+        await query.edit_message_text(text=f"Now select one or more sports:", reply_markup=sports_keyboard)
+        return
+
+async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_data = query.data
+    selected = context.user_data.setdefault("sports", set())
+
+    if user_data == "sport_next":
+        await query.message.delete()
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating bet slips…")
+        context.application.create_task(fetch_prediction(query, context))
+        return
+    
+    _, sport = user_data.split(":", 1)
+    sport = sport.strip()
+    if sport == "all":
+        selected.clear()
+    else:
+        selected.discard("all")
+        if sport in selected:
+            selected.remove(sport)
+        else:
+            selected.add(sport)
+
+    await query.edit_message_reply_markup(reply_markup=build_sports_keyboard(selected))
+
+async def fetch_prediction(query, context):
+    # run_id = datetime.utcnow().strftime("%Y%m%d-%H%M%S") # Run ID for development only
+    user_data = context.user_data
+    json_data_copy = json.loads(json.dumps(json_data))
+    
+    if user_data.get("mode") == "Custom":
+        vars = json_data_copy["variables"]
+        logging.info(f"time: {user_data['time']}\n sports: {list(user_data['sports'])}")
+
+        if user_data['time'] != "all":
+            vars["day"] = user_data['time']
+        if user_data["sports"]:
+            vars['sportSlugs'] = list(user_data["sports"])
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=30, write=10, pool=10)) as client:
+        response = await client.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
+    
+    if response.status_code != 200:
+        await context.bot.send_message(chat_id=query.message.chat_id, text=f"Scores24 API error, status code: {response.status_code}")
+        return
+
+    response_json = response.json()
+    response_text = json.dumps(response_json, indent=2)
+
+    MAX_LEN = 4000
+    for i in range(0, len(response_text), MAX_LEN):
+        await context.bot.send_message(chat_id=query.message.chat_id, text=response_text[i:i + MAX_LEN])
+    context.user_data.clear()
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -135,12 +304,20 @@ def main():
     start_handler = CommandHandler("start", start_command)
     help_handler = CommandHandler("help", help_command)
     contact_handler = CommandHandler("contact", contact_command)
+    generate_prediction_handler = CommandHandler("generate_predictions", generate_prediction_command)
+    mode_selection_handler = CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)")
+    time_selection_handler = CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)")
+    sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
     unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
 
     # Attach handlers to bot
     application.add_handler(start_handler)
     application.add_handler(help_handler)
     application.add_handler(contact_handler)
+    application.add_handler(generate_prediction_handler)
+    application.add_handler(mode_selection_handler)
+    application.add_handler(time_selection_handler)
+    application.add_handler(sport_selection_handler)
     application.add_error_handler(error_handler)
 
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
