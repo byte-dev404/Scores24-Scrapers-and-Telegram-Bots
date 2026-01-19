@@ -120,6 +120,23 @@ def build_mode_keyboard(selected_mode: Optional[str]):
 
     return InlineKeyboardMarkup(keyborad)
 
+def build_time_keyboard(selected_time: Optional[str]):
+    keyboard = []
+    row = []
+
+    for time_option in time_options:
+        label = f"✅ {time_option}" if time_option == selected_time else f"⬜ {time_option}"
+        row.append(InlineKeyboardButton(label, callback_data=f"time: {time_option}"))
+
+        if len(row) == 3:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+
+    keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="time_next")])
+    return InlineKeyboardMarkup(keyboard)
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
