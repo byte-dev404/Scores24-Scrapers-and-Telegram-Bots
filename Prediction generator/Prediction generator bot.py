@@ -137,6 +137,29 @@ def build_time_keyboard(selected_time: Optional[str]):
     keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="time_next")])
     return InlineKeyboardMarkup(keyboard)
 
+def build_sports_keyboard(selected_sport: Optional[str]):
+    keyboard = []
+    row = []
+
+    is_all_active = not selected_sport
+
+    for sport in sport_options:
+        if sport == "all":
+            label = f"✅ All" if is_all_active else "⬜ All"
+        else:
+            label = f"✅ {sport.title()}" if sport in selected_sport else f"⬜ {sport.title()}"
+
+        row.append(InlineKeyboardButton(label, callback_data=f"sport:{sport}"))
+
+        if len(row) == 2:
+            keyboard.append(row)
+            row = []
+    if row:
+        keyboard.append(row)
+
+    keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="sport_next")])
+    return InlineKeyboardMarkup(keyboard)
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
