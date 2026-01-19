@@ -253,6 +253,35 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
 
     await query.edit_message_reply_markup(reply_markup=build_sports_keyboard(selected))
 
+async def fetch_prediction(query, context):
+    # run_id = datetime.utcnow().strftime("%Y%m%d-%H%M%S") # Run ID for development only
+    user_data = context.user_data
+    json_data_copy = json.loads(json.dumps(json_data))
+    
+    if user_data.get("mode") == "Custom":
+        vars = json_data_copy["variables"]
+        logging.info(f"time: {user_data['time']}\n sports: {list(user_data['sports'])}")
+
+        if user_data['time'] != "all":
+            vars["day"] = user_data['time']
+        if user_data["sports"]:
+            vars['sportSlugs'] = list(user_data["sports"])
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=30, write=10, pool=10)) as client:
+        response = await client.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
+    
+    if response.status_code != 200:
+        await context.bot.send_message(chat_id=query.message.chat_id, text=f"Scores24 API error, status code: {response.status_code}")
+        return
+
+    response_json = response.json()
+    response_text = json.dumps(response_json, indent=2)
+
+    MAX_LEN = 4000
+    for i in range(0, len(response_text), MAX_LEN):
+        await context.bot.send_message(chat_id=query.message.chat_id, text=response_text[i:i + MAX_LEN])
+    context.user_data.clear()
+
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
