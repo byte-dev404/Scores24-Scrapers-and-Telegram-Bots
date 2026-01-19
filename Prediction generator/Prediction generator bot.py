@@ -227,6 +227,32 @@ async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text(text=f"Now select one or more sports:", reply_markup=sports_keyboard)
         return
 
+async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    user_data = query.data
+    selected = context.user_data.setdefault("sports", set())
+
+    if user_data == "sport_next":
+        await query.message.delete()
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating bet slips…")
+        context.application.create_task(fetch_prediction(query, context))
+        return
+    
+    _, sport = user_data.split(":", 1)
+    sport = sport.strip()
+    if sport == "all":
+        selected.clear()
+    else:
+        selected.discard("all")
+        if sport in selected:
+            selected.remove(sport)
+        else:
+            selected.add(sport)
+
+    await query.edit_message_reply_markup(reply_markup=build_sports_keyboard(selected))
+
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
