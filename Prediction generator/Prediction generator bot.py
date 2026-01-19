@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import Optional
 from dotenv import load_dotenv
 from telegram.error import TimedOut
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, filters, MessageHandler
+from telegram import Update,  InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, filters, MessageHandler
 
 ''' Get the bot token either from the .env file ''' 
 load_dotenv()
