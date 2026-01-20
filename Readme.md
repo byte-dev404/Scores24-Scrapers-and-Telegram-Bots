@@ -37,3 +37,12 @@ It's recommended to read all three readme files before contributing for better c
 
 * **Non-Commercial:** Free to use for personal or educational projects.
 * **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
+
+
+## Contribution & Guidelines
+
+Contributions are welcome! To maintain project quality:
+
+1. **Open an Issue** first to discuss the bug or feature.
+2. Ensure your code follows PEP 8 guidelines.
+3. Submit a Pull Request (PR) with a clear description of changes.
