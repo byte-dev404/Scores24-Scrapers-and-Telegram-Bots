@@ -1,59 +1,63 @@
 # Scores24 Scrapers and Telegram Bots
 
-This repository contains powerful Python scrapers for Bet builder and Prediction features/pages of Scores24.com and telegram bot scripts build on top of those scraper.
+This repository contains robust Python scrapers for the **Bet Builder** and **Predictions** features of Scores24, along with Telegram bots built on top of those scrapers.
+
+The project is designed to be modular, well documented, and easy to set up, whether you want to use only the scrapers or the full Telegram bots.
 
 
 ## Repository Structure
 
-
 | File/Folder | Description |
 | --- | --- |
-| `Readme.md` | This is the main guide to the repository and anyone wants to use the scraper or bots must begin by reading it first. |
-| `.gitignore` | It's the file where you add names of those folder/files which you want to exclude in PR, e.g.(env, raw json, test files).
-Note: This file is only for developers, so if you do not plan to contribute to the project then you can ignore this file. |
-| `Bet slip generator/` | This directory contains everything related to the Bet builder feature of Scores24 including (Readme, scraper and bot script). |
-| `Prediction generator/` | This directory have all you need regarding Prediction feature of Scores24 including (Readme, scraper and bot script). |
+| `Readme.md` | The main entry point for the repository. Anyone who wants to use the scrapers or bots should start here. |
+| `.gitignore` | Specifies files and folders to exclude from version control, such as `.env`, raw JSON responses, and test files. Note: This file is relevant only for developers contributing to the project. |
+| `Bet slip generator/` | Contains everything related to the Scores24 Bet Builder feature, including its README, scraper, and Telegram bot script. |
+| `Prediction generator/` | Contains all components related to the Scores24 Predictions feature, including its README, scraper, and Telegram bot script. |
+
 
 ## How to use the Scrapers and Bots
 
-The setup of each Bot/Scraper is different from the other, but detailed documentation is provided for each one to leave no room for confusion.
+Each scraper and bot has a slightly different setup, and detailed documentation is provided to ensure a smooth experience.
 
-Therefore to use any bot/scraper, you must read the readme file, found in it's respective directory. this is where you'll find detailed setup steps and testing guide.
-
-To use Bet builder scraper or bot:
-
-- Read `Bet slip generator/Bet slip readme.md` next!
-
-To use Prediction scraper or bot:
-
-- Read `Prediction generator/Prediction readme.md` next!
-
-**Note for developers:**
-
-It's recommended to read all three readme files before contributing for better code quality.
+To use any scraper or bot, **you must read the README file inside its respective directory**. This is where you will find setup instructions, configuration details, and testing guidance.
 
 
-## License & Usage
+### Bet Builder
 
-* **Non-Commercial:** Free to use for personal or educational projects.
-* **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
+* Read `Bet slip generator/Bet slip readme.md`
 
 
-## Contribution & Guidelines
+### Predictions
 
-Contributions are welcome! To maintain project quality:
+* Read `Prediction generator/Prediction readme.md`
 
-1. **Open an Issue** first to discuss the bug or feature.
-2. Ensure your code follows PEP 8 guidelines.
-3. Submit a Pull Request (PR) with a clear description of changes.
+
+### Note for Developers
+
+If you plan to contribute, it is recommended to read all three README files to fully understand the project structure and maintain consistent code quality.
+
+
+## License and Usage
+
+* **Non-commercial use:** Free for personal or educational projects.
+* **Commercial use:** Please provide credit by linking to this repository or to my [GitHub profile](https://github.com/byte-dev404).
+
+
+## Contributions and Guidelines
+
+Contributions are welcome. To keep the project clean and maintainable:
+
+1. Open an issue first to discuss bugs or feature requests.
+2. Follow PEP 8 coding standards.
+3. Submit a pull request with a clear and descriptive summary of your changes.
 
 
 ## Contact
 
-If the scrapers/bots breaks, needs customization, or if you want help scraping another website or any development work, feel free to reach out.
+If a scraper or bot breaks, needs customization, or if you want help scraping another website or require development work, feel free to reach out.
 
-**Email:**
+**Email**
 [zendiagogamingbusiness@gmail.com](mailto:zendiagogamingbusiness@gmail.com)
 
-**LinkedIn:**
+**LinkedIn**
 [https://www.linkedin.com/in/vishwas-batra/](https://www.linkedin.com/in/vishwas-batra/)
