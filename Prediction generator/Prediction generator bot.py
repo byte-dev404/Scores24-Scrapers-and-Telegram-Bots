@@ -164,27 +164,50 @@ def build_sports_keyboard(selected_sport: Optional[str]):
 def extract_predictions(response_json):
     predictions = []
 
-    sport_blocks = response_json.get("data", {}).get("SportPrediction", [])
-    for sport in sport_blocks:
-        edges = sport.get("items", {}).get("edges", [])
-        for edge in edges:
-            node = edge.get("node", {})
+    sport_blocks = response_json.get("data", {}).get("SportPrediction") or []
+    if not isinstance(sport_blocks, list): return predictions
 
-            match = node.get("match", {})
-            teams = match.get("teams", [])
-            team_names = " vs ".join(team.get("name", "Unknown") for team in teams)
+    for sport in sport_blocks:
+        if not isinstance(sport, dict): continue
+
+        items = sport.get("items") or {}
+        edges = items.get("edges") or []
+
+        if not isinstance(edges, list): continue
+
+        for edge in edges:
+            if not isinstance(edge, dict): continue
+
+            node = edge.get("node")
+            if not isinstance(node, dict): continue
+
+            match = node.get("match") or {}
+            if not isinstance(match, dict): continue
+
+            teams = match.get("teams") or []
+            if isinstance(teams, list) and teams:
+                team_names = " vs ".join(team.get("name", "Unknown") for team in teams if isinstance(team, dict))
+            else:
+                team_names = "Unknown match"
 
             prediction_text = node.get("prediction")
             prediction_value = node.get("predictionValue")
             confidence = node.get("agreedVotesPercent")
             votes = node.get("allVotesCount")
 
-            league = (match.get("uniqueTournament", {}) or {}).get("name", "Unknown league")
-            country = (match.get("country") or {}).get("name", "Unknown country")
+            unique_tournament = match.get("uniqueTournament") or {}
+            league = unique_tournament.get("name", "Unknown league")
+
+            country_obj = match.get("country") or {}
+            country = country_obj.get("name", "Unknown country")
+
             match_date = match.get("matchDate")
 
+
+            if prediction_text is None and prediction_value is None: continue
+
             predictions.append({
-                "sport": sport.get("name"),
+                "sport": sport.get("name", "Unknown sport"),
                 "match": team_names,
                 "league": league,
                 "country": country,
@@ -320,10 +343,10 @@ async def fetch_prediction(query, context):
 
     for p in predictions:
         prediction_msg = (
-            f"🏟 {p['match']}\n"
+            f"⚔️ {p['match']}\n"
             f"🏆 {p['league']} ({p['country']})\n"
             f"📊 Prediction: {p['prediction']} ({p['value']})\n"
-            f"✅ Confidence: {p['confidence']}%\n"
+            f"📈 Confidence: {p['confidence']}%\n"
             f"👥 Votes: {p['votes']}\n"
             f"🕒 Match time: {p['match_date']}"
         )
