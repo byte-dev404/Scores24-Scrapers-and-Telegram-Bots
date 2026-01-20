@@ -31,3 +31,9 @@ To use Prediction scraper or bot:
 **Note for developers:**
 
 It's recommended to read all three readme files before contributing for better code quality.
+
+
+## License & Usage
+
+* **Non-Commercial:** Free to use for personal or educational projects.
+* **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
