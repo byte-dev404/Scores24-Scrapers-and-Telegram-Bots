@@ -312,12 +312,26 @@ async def fetch_prediction(query, context):
         return
 
     response_json = response.json()
-    response_text = json.dumps(response_json, indent=2)
+    predictions = extract_predictions(response_json)
 
-    MAX_LEN = 4000
-    for i in range(0, len(response_text), MAX_LEN):
-        await context.bot.send_message(chat_id=query.message.chat_id, text=response_text[i:i + MAX_LEN])
+    if not predictions:
+        await context.bot.send_message(chat_id=query.message.chat_id, text="No predictions found for the selected filters.")
+        return
+
+    for p in predictions:
+        prediction_msg = (
+            f"🏟 {p['match']}\n"
+            f"🏆 {p['league']} ({p['country']})\n"
+            f"📊 Prediction: {p['prediction']} ({p['value']})\n"
+            f"✅ Confidence: {p['confidence']}%\n"
+            f"👥 Votes: {p['votes']}\n"
+            f"🕒 Match time: {p['match_date']}"
+        )
+
+        await context.bot.send_message(chat_id=query.message.chat_id, text=prediction_msg)
+
     context.user_data.clear()
+
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
