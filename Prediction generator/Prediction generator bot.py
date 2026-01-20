@@ -215,7 +215,8 @@ def extract_predictions(response_json):
             else:
                 team_names = "Unknown match"
 
-            prediction_text = node.get("prediction")
+            raw_prediction = node.get("prediction")
+            prediction_text = format_prediction(raw_prediction)
             prediction_value = node.get("predictionValue")
             confidence = node.get("agreedVotesPercent")
             votes = node.get("allVotesCount")
