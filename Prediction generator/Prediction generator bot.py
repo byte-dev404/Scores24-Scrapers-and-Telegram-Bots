@@ -103,7 +103,7 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# Helper functions to build keyboard/buttons
+# Helper funcs to build keyboard/buttons
 def build_mode_keyboard(selected_mode: Optional[str]):
     keyborad = []
     row = []
@@ -159,6 +159,92 @@ def build_sports_keyboard(selected_sport: Optional[str]):
 
     keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="sport_next")])
     return InlineKeyboardMarkup(keyboard)
+
+# Helper funcs to extract/format useful data from the json blob
+def format_prediction(pred):
+    if isinstance(pred, list) and len(pred) == 2:
+        market, value = pred
+        value = value.replace("_", ".") if isinstance(value, str) else value
+
+        market_map = {
+            "handicap1": "Handicap Home",
+            "handicap2": "Handicap Away",
+            "total_t1_over": "Team 1 Over",
+            "total_t1_under": "Team 1 Under",
+            "total_t2_over": "Team 2 Over",
+            "total_t2_under": "Team 2 Under",
+            "double_chance": "Double Chance",
+            "one_x_two": "Match Result",
+            "both_to_score": "Both Teams to Score",
+        }
+
+        market_label = market_map.get(market, market.replace("_", " ").title())
+        return f"{market_label} {value}"
+
+    if isinstance(pred, str):
+        return pred
+
+    return "Unknown prediction"
+
+def extract_predictions(response_json):
+    predictions = []
+
+    sport_blocks = response_json.get("data", {}).get("SportPrediction") or []
+    if not isinstance(sport_blocks, list): return predictions
+
+    for sport in sport_blocks:
+        if not isinstance(sport, dict): continue
+
+        items = sport.get("items") or {}
+        edges = items.get("edges") or []
+
+        if not isinstance(edges, list): continue
+
+        for edge in edges:
+            if not isinstance(edge, dict): continue
+
+            node = edge.get("node")
+            if not isinstance(node, dict): continue
+
+            match = node.get("match") or {}
+            if not isinstance(match, dict): continue
+
+            teams = match.get("teams") or []
+            if isinstance(teams, list) and teams:
+                team_names = " vs ".join(team.get("name", "Unknown") for team in teams if isinstance(team, dict))
+            else:
+                team_names = "Unknown match"
+
+            raw_prediction = node.get("prediction")
+            prediction_text = format_prediction(raw_prediction)
+            prediction_value = node.get("predictionValue")
+            confidence = node.get("agreedVotesPercent")
+            votes = node.get("allVotesCount")
+
+            unique_tournament = match.get("uniqueTournament") or {}
+            league = unique_tournament.get("name", "Unknown league")
+
+            country_obj = match.get("country") or {}
+            country = country_obj.get("name", "Unknown country")
+
+            match_date = match.get("matchDate")
+
+
+            if prediction_text is None and prediction_value is None: continue
+
+            predictions.append({
+                "sport": sport.get("name", "Unknown sport"),
+                "match": team_names,
+                "league": league,
+                "country": country,
+                "prediction": prediction_text,
+                "value": prediction_value,
+                "confidence": confidence,
+                "votes": votes,
+                "match_date": match_date,
+            })
+
+    return predictions
 
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -275,12 +361,26 @@ async def fetch_prediction(query, context):
         return
 
     response_json = response.json()
-    response_text = json.dumps(response_json, indent=2)
+    predictions = extract_predictions(response_json)
 
-    MAX_LEN = 4000
-    for i in range(0, len(response_text), MAX_LEN):
-        await context.bot.send_message(chat_id=query.message.chat_id, text=response_text[i:i + MAX_LEN])
+    if not predictions:
+        await context.bot.send_message(chat_id=query.message.chat_id, text="No predictions found for the selected filters.")
+        return
+
+    for p in predictions:
+        prediction_msg = (
+            f"⚔️ {p['match']}\n"
+            f"🏆 {p['league']} ({p['country']})\n"
+            f"📊 Prediction: {p['prediction']} ({p['value']})\n"
+            f"📈 Confidence: {p['confidence']}%\n"
+            f"👥 Votes: {p['votes']}\n"
+            f"🕒 Match time: {p['match_date']}"
+        )
+
+        await context.bot.send_message(chat_id=query.message.chat_id, text=prediction_msg)
+
     context.user_data.clear()
+
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
