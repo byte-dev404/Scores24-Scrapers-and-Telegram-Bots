@@ -160,7 +160,32 @@ def build_sports_keyboard(selected_sport: Optional[str]):
     keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="sport_next")])
     return InlineKeyboardMarkup(keyboard)
 
-# Helper func to extract useful data from the json blob
+# Helper funcs to extract/format useful data from the json blob
+def format_prediction(pred):
+    if isinstance(pred, list) and len(pred) == 2:
+        market, value = pred
+        value = value.replace("_", ".") if isinstance(value, str) else value
+
+        market_map = {
+            "handicap1": "Handicap Home",
+            "handicap2": "Handicap Away",
+            "total_t1_over": "Team 1 Over",
+            "total_t1_under": "Team 1 Under",
+            "total_t2_over": "Team 2 Over",
+            "total_t2_under": "Team 2 Under",
+            "double_chance": "Double Chance",
+            "one_x_two": "Match Result",
+            "both_to_score": "Both Teams to Score",
+        }
+
+        market_label = market_map.get(market, market.replace("_", " ").title())
+        return f"{market_label} {value}"
+
+    if isinstance(pred, str):
+        return pred
+
+    return "Unknown prediction"
+
 def extract_predictions(response_json):
     predictions = []
 
