@@ -103,7 +103,7 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# Helper functions to build keyboard/buttons
+# Helper funcs to build keyboard/buttons
 def build_mode_keyboard(selected_mode: Optional[str]):
     keyborad = []
     row = []
@@ -159,6 +159,43 @@ def build_sports_keyboard(selected_sport: Optional[str]):
 
     keyboard.append([InlineKeyboardButton("Next ➡️", callback_data="sport_next")])
     return InlineKeyboardMarkup(keyboard)
+
+# Helper func to extract useful data from the json blob
+def extract_predictions(response_json):
+    predictions = []
+
+    sport_blocks = response_json.get("data", {}).get("SportPrediction", [])
+    for sport in sport_blocks:
+        edges = sport.get("items", {}).get("edges", [])
+        for edge in edges:
+            node = edge.get("node", {})
+
+            match = node.get("match", {})
+            teams = match.get("teams", [])
+            team_names = " vs ".join(team.get("name", "Unknown") for team in teams)
+
+            prediction_text = node.get("prediction")
+            prediction_value = node.get("predictionValue")
+            confidence = node.get("agreedVotesPercent")
+            votes = node.get("allVotesCount")
+
+            league = (match.get("uniqueTournament", {}) or {}).get("name", "Unknown league")
+            country = (match.get("country") or {}).get("name", "Unknown country")
+            match_date = match.get("matchDate")
+
+            predictions.append({
+                "sport": sport.get("name"),
+                "match": team_names,
+                "league": league,
+                "country": country,
+                "prediction": prediction_text,
+                "value": prediction_value,
+                "confidence": confidence,
+                "votes": votes,
+                "match_date": match_date,
+            })
+
+    return predictions
 
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
