@@ -105,3 +105,47 @@ From there, it'll ask give you a few options to choose form, these are basically
 
 Now, you can use that raw json data to do whatever you want with it. 
 
+
+## How to test the bot
+
+The process of test the bot is very similar to the scraper.
+Just make sure you've done the setup correctly, as it is mandatory for running the bot not optional.
+
+1. Add your bot token.
+
+To run the script you must add your bot token in it, there are two ways to it.
+
+* Paste it in the script:
+
+The most easiest way is to paste your bot taken directly in the script, it is not a best practice but just make sure not never commit you token to github.
+
+1. Locate and uncomment this line `# bot_token = "~~Enter~~your~~bot~~token~~here~~" ` in the `Prediction generator bot.py` file, you'll find it right after imports.
+2. Replcae this `"~~Enter~~your~~bot~~token~~here~~"` with your actual bot token string.
+
+* Load bot token from .env
+
+This it the best and recommended way, so you'll never have to worry about accidently leaking your secrets.
+
+1. Create a `.env` file at the root of the directory.
+2. Add this line `PREDICTION_GENERATOR_BOT_TOKEN = ""` in .env file and replace the empty string with your bot token.
+3. Now uncomment the following lines from `Prediction generator bot.py` found right after imports:
+```python
+# load_dotenv()
+# bot_token = os.getenv("PREDICTION_GENERATOR_BOT_TOKEN")
+```
+
+2. Run the bot
+
+Now just paste this command in the terminal:
+
+```bash
+python "Prediction generator bot.py"
+```
+you'll see something like `telegram.ext.Application - INFO - Application started` in the terminal, it indicates that the bot has started sucessfully.
+
+3. Confirm the bot is initialized
+
+Go to your telegram bot and run the /start command, the bot will reponed.
+
+Now you can deploy the bot and add new featues to it as your liking.
+
