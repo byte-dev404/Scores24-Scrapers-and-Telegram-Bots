@@ -90,16 +90,16 @@ There are two ways to run the Bet Builder scraper.
 
 If you followed the setup steps correctly, run:
 
-    ```bash
-    python "Bet slip scraper.py"
-    ```
+```bash
+python "Bet slip scraper.py"
+```
 
 ### Using the Executable
 
 For quick testing without any setup, you can use the Windows executable.
 
-    * Open the Bet slip directory in File Explorer
-    * Double click on `Bet slip scraper.exe`
+* Open the Bet slip directory in File Explorer
+* Double click on `Bet slip scraper.exe`
 
 **Note:** The executable works only on Windows.
 
@@ -108,9 +108,9 @@ For quick testing without any setup, you can use the Windows executable.
 
 Once the scraper starts, you will see a message like:
 
-    ```
-    Use arrow keys to select options ⬇️ ⬆️
-    ```
+```
+Use arrow keys to select options ⬇️ ⬆️
+```
 
 This indicates that the scraper is running successfully.
 
@@ -161,15 +161,15 @@ Make sure you never commit your bot token to GitHub.
 
 Run the following command:
 
-    ```bash
-    python "Bet slip generator bot.py"
-    ```
+```bash
+python "Bet slip generator bot.py"
+```
 
 If you see a message like:
 
-    ```
-    telegram.ext.Application - INFO - Application started
-    ```
+```
+telegram.ext.Application - INFO - Application started
+```
 
 the bot has started successfully.
 
