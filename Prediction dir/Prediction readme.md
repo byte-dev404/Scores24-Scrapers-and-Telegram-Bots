@@ -172,3 +172,8 @@ On core level, the bot works very similarly to scraper, the only major differenc
 4. After all the back and forth, it sends a request to Scores24 leaked graphQL endpoint with the selected filters 
 5. Finally, if the Scores24 responds with json, it extracts the useful data and sends the bet slips back to user otherwise it responed with an appropreate error message.
 
+
+## License & Usage
+
+* **Non-Commercial:** Free to use for personal or educational projects.
+* **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
