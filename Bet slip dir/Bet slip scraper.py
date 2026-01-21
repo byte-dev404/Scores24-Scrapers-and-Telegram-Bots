@@ -82,6 +82,7 @@ market_options_translation = {
 
 
 def main():
+    global sport, time_range, event, market, odd_from, odd_to
     print("\nUse arrow keys to select options ⬇️ ⬆️\n")
 
     selected_sport = inquirer.select(message="Select a sport: ", choices=sports_options, max_height=len(sports_options)).execute()
@@ -117,7 +118,7 @@ def main():
 
     print(f"""
 Here's what you choose:
-  Sport: {sport}
+  Sport: {"All" if not sport else sport}
   Time: {time_range} hours
   Event: {event}
   Market: {market}
