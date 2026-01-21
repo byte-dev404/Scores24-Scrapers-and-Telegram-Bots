@@ -74,3 +74,34 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+
+## Running the scraper
+
+Now, there are two different ways to run the scraper,
+
+
+### Using the python script:
+
+If you follow the setup guide correctly, then just the following comand in the terminal:
+
+```bash
+python "Prediction scraper.py"
+```
+
+
+### Using executable:
+
+if you want to do a quick test without doing all the setup then just follow the steps below to run the executable, but keep in mind that it will only work on windows:
+
+* Open the `Prediction dir` folder in file explorer 
+* Double click on the `Prediction scraper.exe` file
+
+
+### Testing
+
+After you run the scraper no matter which way, you'll see `Use arrow keys to select options ⬇️ ⬆️` in the terminal, it means the scraper has started.
+
+From there, it'll ask give you a few options to choose form, these are basically the filters you find on scores24 website, once you're done with the questionaries, the scraper will generate a `raw files` folder in the `Prediction dir` which contains the raw josn fetched form the filters, you just have selected.
+
+Now, you can use that raw json data to do whatever you want with it. 
+
