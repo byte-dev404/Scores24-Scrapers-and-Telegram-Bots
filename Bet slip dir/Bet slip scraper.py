@@ -1,34 +1,90 @@
+import os
 import json
 import requests
 from InquirerPy import inquirer
 
+
+json_dir = os.path.join("Bet slip dir", "raw files")
+os.makedirs(json_dir, exist_ok=True)
+
+bet_slip_endpoint = "https://scores24.live/graphql"
+
+cookies = {
+    'testValue': '1',
+    'bannerValue': '1',
+    'userOddFormat': 'EU',
+    'machineTimezone': 'GMT+5:30',
+    's24-session': 'npy5pGeYrwdqx2ggFVVSKlwg9c5XirxHTmZJQzXz',
+    'cookiesAccepted': '1',
+    '_ym_uid': '1766933521295718120',
+    '_ym_d': '1767272335',
+    '_ym_isad': '2',
+    '_ga': 'GA1.1.1417545567.1767272355',
+    '_ym_uid': '1766933521295718120',
+    '_ga_ZPJ1YWQ2Z0': 'GS2.1.s1767272355$o1$g0$t1767272359$j56$l0$h0',
+    '_ga_L002PTBYML': 'GS2.1.s1767272355$o1$g0$t1767272359$j56$l0$h0',
+    'promo-proxy-9d962': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRhIjoie1wic3RyZWFtc1wiOntcIjE0MzBcIjoxNzY3MjUyNDM0LFwiMTQzNFwiOjE3NjcyNzIzMjQsXCIxNDMyXCI6MTc2NzI3MjM2MixcIjY0MjNcIjoxNzY3MjcyNDk1LFwiMTQzMVwiOjE3NjcyNzI4MzR9LFwiY2FtcGFpZ25zXCI6e1wiMTBcIjoxNzY3MjUyNDM0fSxcInRpbWVcIjoxNzY3MjUyNDM0fSJ9.PmGw5A_sjk8pmSsQbcWmFQolPn4kuSWoG63BnNy-AAE',
+    'clever-counter-86866': '0-1',
+    'promo-proxy-_subid': '2euq92mhpcnfr',
+    'promo-proxy-_token': 'uuid_2euq92mhpcnfr_2euq92mhpcnfr69567dbe5a7d78.52230640',
+    'adScriptNew': '1',
+}
+
+headers = {
+    'accept': 'application/graphql-response+json, application/graphql+json, application/json, text/event-stream, multipart/mixed',
+    'accept-language': 'en-US,en;q=0.9',
+    'content-type': 'application/json',
+    'origin': 'https://scores24.live',
+    'priority': 'u=1, i',
+    'referer': 'https://scores24.live/en/accumulators/builder',
+    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+    'x-api-timestamp': '1767274054',
+    'x-api-token': 'tolxho',
+    'x-bot-identifier': 'client',
+    'x-country': 'in',
+    'x-ssr-ip': '2402:8100:2235:e969:b4e8:d120:3753:556a',
+    'x-user-cache': 'W2ZO6w9f6OdiBrEL9DMG',
+    'x-user-ip': '2402:8100:2235:e969:b4e8:d120:3753:556a',
+}
+
+# Default params
+sport = []
+time_range = 2
+event = 15
+market = 'all'
+odd_from = 1.1
+odd_to = 2.9
+
+# All options
+sports_options = ['all', 'soccer', 'basketball', 'tennis', 'ice-hockey', 'table-tennis', 'volleyball', 'handball', 'baseball', 'american-football', 'rugby', 'cricket', 'mma', 'boxing', 'snooker', 'futsal', 'waterpolo', 'badminton', 'darts', 'csgo', 'dota2', 'lol', 'horse-racing',]
+time_options = ['2 hours', '6 hours', '12 hours', '24 hours', '48 hours']
+market_options = ['All', 'Match Result', 'Double Chance', 'Over/Under', 'Correct Score', 'Both Teams to Score', 'Handicap', 'Corners', 'Fouls', 'Cards', 'Shots', 'Off-sides']
+market_options_translation = {
+    'All': 'all',
+    'Match Result': 'results',
+    'Double Chance': 'doublechance',
+    'Over/Under': 'totals',
+    'Correct Score': 'correctscore',
+    'Both Teams to Score': 'btts',
+    'Handicap': 'handicaps',
+    'Corners': 'corners',
+    'Fouls': 'fouls',
+    'Cards': 'cards',
+    'Shots': 'shots',
+    'Off-sides': 'offsides',
+}
+
+
 def main():
-    sports_options = ['all', 'soccer', 'basketball', 'tennis', 'ice-hockey', 'table-tennis', 'volleyball', 'handball', 'baseball', 'american-football', 'rugby', 'cricket', 'mma', 'boxing', 'snooker', 'futsal', 'waterpolo', 'badminton', 'darts', 'csgo', 'dota2', 'lol', 'horse-racing',]
-    time_options = ['2 hours', '6 hours', '12 hours', '24 hours', '48 hours']
-    market_options = ['All', 'Match Result', 'Double Chance', 'Over/Under', 'Correct Score', 'Both Teams to Score', 'Handicap', 'Corners', 'Fouls', 'Cards', 'Shots', 'Off-sides']
-    market_options_translation = {
-        'All': 'all',
-        'Match Result': 'results',
-        'Double Chance': 'doublechance',
-        'Over/Under': 'totals',
-        'Correct Score': 'correctscore',
-        'Both Teams to Score': 'btts',
-        'Handicap': 'handicaps',
-        'Corners': 'corners',
-        'Fouls': 'fouls',
-        'Cards': 'cards',
-        'Shots': 'shots',
-        'Off-sides': 'offsides',
-    }
+    global sport, time_range, event, market, odd_from, odd_to
+    print("\nUse arrow keys to select options ⬇️ ⬆️\n")
 
-    sport = []
-    time_range = 2
-    event = 15
-    market = 'all'
-    odd_from = 1.1
-    odd_to = 2.9
-
-    print("Use arrow keys to select options ⬇️ ⬆️")
     selected_sport = inquirer.select(message="Select a sport: ", choices=sports_options, max_height=len(sports_options)).execute()
     selected_time = inquirer.select(message="Select a time for the freshness of results: ", choices=time_options, height=len(time_options)).execute()
     selected_event = input('Choose the number of events between 1 to 15 (Defaults to 15) : ')
@@ -36,79 +92,39 @@ def main():
     selected_oddFrom = input('Enter a value between 1.1 to 2.9 for Odd-From (Defaults to 1.1): ')
     selected_oddTo = input(f'Enter a value between {selected_oddFrom or 1.2} to 3.0 for Odd-To (Defaults to 3.0): ')
 
-    if selected_sport is not None:
-        if selected_sport != "all":
-            sport = [selected_sport]
-        print(sport)
-    if selected_time is not None:
-        time_range = int(selected_time.split(' ')[0])
-    if selected_event:
-        selected_event = int(selected_event) 
-        if not selected_event < 1 and not selected_event > 15:
-            event = int(selected_event)
-    if selected_market is not None:
-        market = market_options_translation[selected_market]
+
+    if selected_sport != "all":
+        sport = [selected_sport]
+
+    time_range = int(selected_time.split(' ')[0])
+
+    selected_event = int(selected_event) 
+    if selected_event > 1 and selected_event < 15:
+        event = selected_event
+
+    market = market_options_translation[selected_market]
+
     if selected_oddFrom:
         selected_oddFrom = float(selected_oddFrom)
-        if not selected_oddFrom < 1.1 and not selected_oddFrom > 2.9:
+
+        if selected_oddFrom > 1.1 and selected_oddFrom < 2.9:
             odd_from = selected_oddFrom
+            
     if selected_oddTo:
         selected_oddTo = float(selected_oddTo)
-        if not selected_oddTo < odd_from and not selected_oddTo > 3.0:
+        
+        if selected_oddTo > odd_from and selected_oddTo < 3.0:
             odd_to = selected_oddTo
 
-    print(f"""Here's what you choose:
-        Sport: {sport}
-        Time: {time_range} hours
-        Event: {event}
-        Market: {market}
-        Odd-From: {odd_from}
-        Odd-To: {odd_to}
-    """)
-
-    cookies = {
-        'testValue': '1',
-        'bannerValue': '1',
-        'userOddFormat': 'EU',
-        'machineTimezone': 'GMT+5:30',
-        's24-session': 'npy5pGeYrwdqx2ggFVVSKlwg9c5XirxHTmZJQzXz',
-        'cookiesAccepted': '1',
-        '_ym_uid': '1766933521295718120',
-        '_ym_d': '1767272335',
-        '_ym_isad': '2',
-        '_ga': 'GA1.1.1417545567.1767272355',
-        '_ym_uid': '1766933521295718120',
-        '_ga_ZPJ1YWQ2Z0': 'GS2.1.s1767272355$o1$g0$t1767272359$j56$l0$h0',
-        '_ga_L002PTBYML': 'GS2.1.s1767272355$o1$g0$t1767272359$j56$l0$h0',
-        'promo-proxy-9d962': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRhIjoie1wic3RyZWFtc1wiOntcIjE0MzBcIjoxNzY3MjUyNDM0LFwiMTQzNFwiOjE3NjcyNzIzMjQsXCIxNDMyXCI6MTc2NzI3MjM2MixcIjY0MjNcIjoxNzY3MjcyNDk1LFwiMTQzMVwiOjE3NjcyNzI4MzR9LFwiY2FtcGFpZ25zXCI6e1wiMTBcIjoxNzY3MjUyNDM0fSxcInRpbWVcIjoxNzY3MjUyNDM0fSJ9.PmGw5A_sjk8pmSsQbcWmFQolPn4kuSWoG63BnNy-AAE',
-        'clever-counter-86866': '0-1',
-        'promo-proxy-_subid': '2euq92mhpcnfr',
-        'promo-proxy-_token': 'uuid_2euq92mhpcnfr_2euq92mhpcnfr69567dbe5a7d78.52230640',
-        'adScriptNew': '1',
-    }
-
-    headers = {
-        'accept': 'application/graphql-response+json, application/graphql+json, application/json, text/event-stream, multipart/mixed',
-        'accept-language': 'en-US,en;q=0.9',
-        'content-type': 'application/json',
-        'origin': 'https://scores24.live',
-        'priority': 'u=1, i',
-        'referer': 'https://scores24.live/en/accumulators/builder',
-        'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-        'x-api-timestamp': '1767274054',
-        'x-api-token': 'tolxho',
-        'x-bot-identifier': 'client',
-        'x-country': 'in',
-        'x-ssr-ip': '2402:8100:2235:e969:b4e8:d120:3753:556a',
-        'x-user-cache': 'W2ZO6w9f6OdiBrEL9DMG',
-        'x-user-ip': '2402:8100:2235:e969:b4e8:d120:3753:556a',
-    }
+    print(f"""
+Here's what you choose:
+  Sport: {"All" if not sport else sport}
+  Time: {time_range} hours
+  Event: {event}
+  Market: {market}
+  Odd-From: {odd_from}
+  Odd-To: {odd_to}
+""")
 
     json_data_for_custom_results = {
         'operationName': 'CustomAccumFeed',
@@ -128,16 +144,21 @@ def main():
         },
     }
 
-    response = requests.post('https://scores24.live/graphql', cookies=cookies, headers=headers, json=json_data_for_custom_results)
-    print(response.status_code)
-    if response.status_code == 200:
-        with open('./test-1.json', 'w', encoding='utf-8') as f:
-            json.dump(response.json(), f, indent=4, ensure_ascii=False)
-        print("Success! File saved as test-1.json")
-    else:
-        print("Request failed. Status code:", response.status_code)
+    response = requests.post(bet_slip_endpoint, cookies=cookies, headers=headers, json=json_data_for_custom_results)
 
-    print("Check if there's a 'test-1.json' file appears in the scraper folder")
+    print(response.status_code)
+
+    if response.status_code == 200:
+        file_path = os.path.join(json_dir, "test-1.json")
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(response.json(), f, indent=4, ensure_ascii=False)
+
+        print("Success! File saved as test-1.json")
+        print("Check if there's a 'test-1.json' file appears in the scraper folder")
+    else:
+        print("Request failed! Status code:", response.status_code)
+
     input("\nPress Enter to exit...")
 
 if __name__ == "__main__":
