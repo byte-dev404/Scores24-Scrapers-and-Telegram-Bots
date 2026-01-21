@@ -1,11 +1,11 @@
 # Scores 24 Bet Builder's Scraper and Telegram bot script
 
-Bet slip directory of this repository contains strong python scraper that utilizes Scores24's exposed graphQL endpoint to fetch results from Bet builder page and returns raw json data, which then can be used for various perposes, like I embeded the scraper in telegram bot script, so now it can ask users for filters and fetch raw json based on those filters and return structured bet-slips.
+Bet slip diractory of this repository contains strong python scraper that utilizes Scores24's exposed graphQL endpoint to fetch results from Bet builder page and returns raw json data, which then can be used for various perposes, like I embeded the scraper in telegram bot script, so now it can ask users for filters and fetch raw json based on those filters and return structured bet-slips.
 
-This was just an overview, this readme will dive you through the directory structure, scraper and bot's testing process along with how they work on a core level.
+This was just an overview, this readme will dive you through the diractory structure, scraper and bot's testing process along with how they work on a core level.
 
 
-## directory contents
+## Diractory contents
 
 | File/Folder | Description |
 | -- | -- |
@@ -73,3 +73,35 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
+
+
+## Running the scraper
+
+Now, there are two different ways to do run the scraper,
+
+
+### Using the python script:
+
+If you follow the setup guide correctly, then just the following comand in the terminal:
+
+```bash
+python "Bet slip scraper.py"
+```
+
+
+### Using executable:
+
+if you want to do a quick test without doing all the setup then just follow the steps below to run the executable, but keep it mind that it will only work on windows:
+
+* Open the `Bet slip dir` folder in file explorer 
+* Double click on the `Bet slip scraper.exe` file
+
+
+### Testing
+
+After you run the scraper no matter which way, you'll see `Use arrow keys to select options ⬇️ ⬆️` in the terminal, it means the scraper has started.
+
+From there, it'll ask give you a few options to choose form, these are basically the filters you find on scores24 website, once you're done with the quernaries, the scraper will generate a `raw files` folder in the `Bet slip dir` which contains the raw josn fetched form the filters, you just have selected.
+
+Now, you can use that raw json data to do whatever you want with it. 
+
