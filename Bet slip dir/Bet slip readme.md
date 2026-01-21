@@ -161,3 +161,17 @@ Here's a workflow so you really understands what's going under the hood.
 3. After the user is done with questionaries, the scraper sends the request with the selcted filters 
 4. Finally, if the Scores24 response is ok, then it saves the raw json in `raw files` folder otherwise it prints an error message with the status code of sent by Scores24.
 
+
+## How the bot works (for contributors)
+
+On core level, the bot works very similarly to scraper, the only major difference is, instead of using `inquirerpy` to gather filters options form users, the bot utilizes `python-telegram-bot` library and did all the questionaries in the telegram instead of terminal.  
+
+1. After the bot is fully initialized, it prints a confirmation message in the terminal.
+2. When the user uses /generate_bet_slip command the bot starts the questionaries to collect all the fillter data. 
+3. Once the bot have all the nesscary data, it sends a confirmation message to the person interacting with it.
+4. After all the back and forth, it sends a request to Scores24 leaked graphQL endpoint based on the given filters 
+5. Finally, if the Scores24 responds with json, it extracts the useful data and sends the bet slips back to user otherwise it responed with an appropreate error message.
+
+
+
+
