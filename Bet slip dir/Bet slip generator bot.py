@@ -331,7 +331,7 @@ async def handle_time_range_selection(update: Update, context: ContextTypes.DEFA
     if data == "time_next":
         selected_time_range = context.user_data.get("time_range")
         if not selected_time_range:
-            await query.answer("Select a time option", show_alert=True)
+            await query.answer("Select a time option...!", show_alert=True)
             return
             
         context.user_data["market"] = None
@@ -455,7 +455,6 @@ async def handle_confirmation(update: Update, context: ContextTypes.DEFAULT_TYPE
     await fetch_bet_slips_from_scores24(query, context)
 
 async def fetch_bet_slips_from_scores24(query, context):
-    run_id = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     data = context.user_data
     user_tz = data.get("timezone", "UTC")
     
@@ -524,36 +523,39 @@ async def error_handler(update, context):
     logging.exception("Unhandled error", exc_info=context.error)
 
 def main():
-    print('Booting bot up')
+    print("Booting up the bot")
     application = ApplicationBuilder().token(bot_token).build()
     
     start_handler = CommandHandler("start", start_command)
     location_handler = MessageHandler(filters.LOCATION, handle_location)
     help_handler = CommandHandler("help", help_command)
     contact_handler = CommandHandler("contact", contact_command)
+
     generate_bet_slip_handler = CommandHandler("generate_bet_slip", generate_bet_slip_command)
     sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
     time_selection_handler = CallbackQueryHandler(handle_time_range_selection, pattern="^(time_range:|time_next)")
     market_selection_handler = CallbackQueryHandler(handle_market_selection, pattern="^(market:|market_next)")
+    numeric_input_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_numeric_input)
     confirmation_handler = CallbackQueryHandler(handle_confirmation, pattern="^(confirm|cancel)$")
+
     unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
 
     application.add_handler(start_handler)
+    application.add_handler(location_handler)
     application.add_handler(help_handler)
     application.add_handler(contact_handler)
-    application.add_handler(generate_bet_slip_handler)
 
-    application.add_handler(location_handler)
+    application.add_handler(generate_bet_slip_handler)
     application.add_handler(sport_selection_handler)
     application.add_handler(time_selection_handler)
     application.add_handler(market_selection_handler)
+    application.add_handler(numeric_input_handler)
 
     application.add_handler(confirmation_handler)
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_numeric_input))
     application.add_error_handler(error_handler)
     application.add_handler(unknown_handler)
 
-    print('Bot successfully initialized, now listening for inputs')
+    print("Bot successfully initialized, now listening for inputs")
     application.run_polling()
 
 if __name__ == '__main__':
