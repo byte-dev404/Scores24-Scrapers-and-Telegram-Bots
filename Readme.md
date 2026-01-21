@@ -10,9 +10,9 @@ The project is designed to be modular, well documented, and easy to set up, whet
 | File/Folder | Description |
 | --- | --- |
 | `Readme.md` | The main entry point for the repository. Anyone who wants to use the scrapers or bots should start here. |
-| `.gitignore` | Specifies files and folders to exclude from version control, such as `.env`, raw JSON responses, and test files. Note: This file is relevant only for developers contributing to the project. |
-| `Bet slip generator/` | Contains everything related to the Scores24 Bet Builder feature, including its README, scraper, and Telegram bot script. |
-| `Prediction generator/` | Contains all components related to the Scores24 Predictions feature, including its README, scraper, and Telegram bot script. |
+| `.gitignore` | Specifies files and folders to exclude from version control, such as `.env`, raw JSON responses, and test files.<br/> Note: This file is relevant only for developers contributing to the project. |
+| `Bet slip dir/` | Contains everything related to the Scores24 Bet Builder feature, including its README, scraper, and Telegram bot script. |
+| `Prediction dir/` | Contains all components related to the Scores24 Predictions feature, including its README, scraper, and Telegram bot script. |
 
 
 ## How to use the Scrapers and Bots
@@ -24,12 +24,12 @@ To use any scraper or bot, **you must read the README file inside its respective
 
 ### Bet Builder
 
-* Read `Bet slip generator/Bet slip readme.md`
+* Read `Bet slip dir/Bet slip readme.md`
 
 
 ### Predictions
 
-* Read `Prediction generator/Prediction readme.md`
+* Read `Prediction dir/Prediction readme.md`
 
 
 ### Note for Developers

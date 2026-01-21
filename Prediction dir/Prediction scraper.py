@@ -4,7 +4,7 @@ import requests
 from InquirerPy import inquirer
 
 
-json_dir = os.path.join("Prediction generator", "raw files")
+json_dir = os.path.join("Prediction dir", "raw files")
 os.makedirs(json_dir, exist_ok=True)
 
 predictions_endpoint = "https://scores24.live/graphql"
