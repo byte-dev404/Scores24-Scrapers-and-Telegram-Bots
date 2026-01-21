@@ -148,3 +148,16 @@ you'll see something like `telegram.ext.Application - INFO - Application started
 Go to your telegram bot and run the /start command, the bot will reponed.
 
 Now you can deploy the bot and add new featues to it as your liking.
+
+
+## How the scraper works (for contributors)
+
+The scraper is very simple and flexible as it does not rely on the html rendered on Scores24 instead it utilizes the exposed graphQL API.
+
+Here's a workflow so you really understands what's going under the hood.
+
+1. The scraper starts and a confirmation message to indicate it has started. 
+2. Then it ask users to select some options from the given choices in the terminal through `inquirerpy` package, which are basically the filters one finds on Scores24 Bet builder page
+3. After the user is done with questionaries, the scraper sends the request with the selcted filters 
+4. Finally, if the Scores24 response is ok, then it saves the raw json in `raw files` folder otherwise it prints an error message with the status code of sent by Scores24.
+
