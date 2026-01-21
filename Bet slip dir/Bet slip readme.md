@@ -179,4 +179,13 @@ On core level, the bot works very similarly to scraper, the only major differenc
 * **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
 
 
+## Contributing
+
+Contributions are welcome! To maintain project quality:
+
+1. **Open an Issue** first to discuss the bug or feature.
+2. Ensure your code follows PEP 8 guidelines.
+3. Submit a Pull Request (PR) with a clear description of changes.
+
+
 
