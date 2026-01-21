@@ -1,199 +1,234 @@
-# Scores 24 Prediction's Scraper and Telegram bot script
+# Scores24 Prediction Scraper and Telegram Bot
 
-Prediction directory of this repository contains strong python scraper that utilizes Scores24's exposed graphQL endpoint to fetch results from Predictions page and returns raw json data, which then can be used for various perposes, like I embeded the scraper in telegram bot script, so now it can ask users for filters and fetch raw json based on those filters and return structured Prediction slips.
+This directory contains a Python scraper for the **Scores24 Predictions** feature, along with a Telegram bot built on top of it.
 
-This was just an overview, this readme will dive you through the directory structure, scraper and bot's testing process along with how they work on a core level.
+The scraper communicates directly with Scores24’s exposed GraphQL endpoint to fetch prediction data from the Predictions page and returns raw JSON responses. This data can be reused for multiple purposes. In this repository, the scraper is integrated into a Telegram bot that allows users to apply filters, fetch prediction data, and receive structured prediction slips directly in Telegram.
+
+This README provides a complete overview of the directory structure, setup process, testing instructions, and a high level explanation of how both the scraper and the bot work internally.
 
 
-## directory contents
+## Directory Contents
 
-| File/Folder | Description |
+| File or Folder | Description |
 | -- | -- |
-| `Prediction readme.md` | This is the main entry point for both Prediction scraper and bot. |
-| `requirements.txt` | This file contains a list of all packages and libraries the scraper and bot relies on, and will be used in the initial setup. |
-| `Prediction scraper.py` | The main scraper, it take filter inputs to produces a raw json file and the bot is comprise of it. |
-| `Prediction scraper.exe` | It's the windows executable version of the bet slip scraper built for easier testing and requires no setup whatsoever. |
-| `Prediction generator bot.py` | The main telegram bot script, built upon prediction scraper, enter your bot token and it's ready to be deployed. |
+| `Prediction readme.md`        | Main documentation entry point for both the Prediction scraper and the Telegram bot.       |
+| `requirements.txt`            | Lists all Python dependencies required by the scraper and the bot.                         |
+| `Prediction scraper.py`       | Core scraper script that accepts filter inputs and fetches raw JSON prediction data.       |
+| `Prediction scraper.exe`      | Windows executable version of the scraper for quick testing without setup.                 |
+| `Prediction generator bot.py` | Telegram bot script built on top of the prediction scraper. Add your bot token and deploy. |
 
 
-## Setup guide
+## Setup Guide
 
-1. Navigate to the repository's [home page][https://github.com/byte-dev404/Scores24-Scrapers-and-Telegram-Bots.git]
+1. Navigate to the repository homepage:
+   [https://github.com/byte-dev404/Scores24-Scrapers-and-Telegram-Bots](https://github.com/byte-dev404/Scores24-Scrapers-and-Telegram-Bots)
 
-2. Click the star icon if you want to bookmark the project (Recommanded).
+2. Optionally, click the star button to bookmark the project.
 
-3. Click the green `<> Code` button and either:
+3. Click the green **Code** button and either:
 
-* Download the ZIP file and extract it, or
+   * Download the ZIP file and extract it, or
+   * Clone the repository using Git:
 
-* Copy the repository URL and clone it:
+   ```bash
+   git clone https://github.com/byte-dev404/Scores24-Scrapers-and-Telegram-Bots.git
+   ```
 
-```bash
-git clone https://github.com/byte-dev404/Linsol-Products-Scraper.git
-```
+4. Install an IDE such as Visual Studio Code:
+   [https://code.visualstudio.com/Download](https://code.visualstudio.com/Download)
 
-4. Install an IDE such as VS Code: https://code.visualstudio.com/Download
-
-5. Install the latest version of Python for your operating system: https://www.python.org/downloads/
+5. Install the latest version of Python for your operating system:
+   [https://www.python.org/downloads/](https://www.python.org/downloads/)
 
 6. Open the cloned or extracted project folder in your IDE.
 
-* For vs code, run the following command from the parent folder where you downloaded/cloned the repo
+   For VS Code, run the following command from the parent directory:
 
-```bash
-code Scores24-Scrapers-and-Telegram-Bots
-```
+   ```bash
+   code Scores24-Scrapers-and-Telegram-Bots
+   ```
 
 7. Open a terminal:
 
-* Press `` Ctrl + Shift + ` ``
-* Or use the menu: Terminal → New Terminal
+   * Press `Ctrl + Shift + ``
+   * Or use the menu: Terminal → New Terminal
 
-8. Set Up a Virtual Environment (Recommended):
+8. Set up a virtual environment (recommended):
 
-1. **Create a virtual environment.**
-```bash
-python -m venv venv
-```
+   Create the virtual environment:
 
-2. **Activate virtual environment:**
+   ```bash
+   python -m venv venv
+   ```
 
-* For Windows:
-```bash
-source venv/Scripts/activate
-```
+   Activate it:
 
-* For Mac/Linux:
-```bash
-source venv/bin/activate
-```
+   On Windows:
+
+   ```bash
+   source venv/Scripts/activate
+   ```
+
+   On macOS or Linux:
+
+   ```bash
+   source venv/bin/activate
+   ```
 
 9. Install required dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 
-## Running the scraper
+## Running the Scraper
 
-Now, there are two different ways to run the scraper,
+There are two ways to run the prediction scraper.
 
+### Using the Python Script
 
-### Using the python script:
-
-If you follow the setup guide correctly, then just the following comand in the terminal:
+If the setup was completed correctly, run:
 
 ```bash
 python "Prediction scraper.py"
 ```
 
+### Using the Executable
 
-### Using executable:
+For quick testing without setup, you can use the Windows executable.
 
-if you want to do a quick test without doing all the setup then just follow the steps below to run the executable, but keep in mind that it will only work on windows:
+* Open the Prediction directory in File Explorer
+* Double click on `Prediction scraper.exe`
 
-* Open the `Prediction dir` folder in file explorer 
-* Double click on the `Prediction scraper.exe` file
-
-
-### Testing
-
-After you run the scraper no matter which way, you'll see `Use arrow keys to select options ⬇️ ⬆️` in the terminal, it means the scraper has started.
-
-From there, it'll ask give you a few options to choose form, these are basically the filters you find on scores24 website, once you're done with the questionaries, the scraper will generate a `raw files` folder in the `Prediction dir` which contains the raw josn fetched form the filters, you just have selected.
-
-Now, you can use that raw json data to do whatever you want with it. 
+Note: The executable works only on Windows.
 
 
-## How to test the bot
+## Testing the Scraper
 
-The process of test the bot is very similar to the scraper.
-Just make sure you've done the setup correctly, as it is mandatory for running the bot not optional.
+After the scraper starts, you will see:
 
-1. Add your bot token.
-
-To run the script you must add your bot token in it, there are two ways to it.
-
-* Paste it in the script:
-
-The most easiest way is to paste your bot taken directly in the script, it is not a best practice but just make sure not never commit you token to github.
-
-1. Locate and uncomment this line `# bot_token = "~~Enter~~your~~bot~~token~~here~~" ` in the `Prediction generator bot.py` file, you'll find it right after imports.
-2. Replcae this `"~~Enter~~your~~bot~~token~~here~~"` with your actual bot token string.
-
-* Load bot token from .env
-
-This it the best and recommended way, so you'll never have to worry about accidently leaking your secrets.
-
-1. Create a `.env` file at the root of the directory.
-2. Add this line `PREDICTION_GENERATOR_BOT_TOKEN = ""` in .env file and replace the empty string with your bot token.
-3. Now uncomment the following lines from `Prediction generator bot.py` found right after imports:
-```python
-# load_dotenv()
-# bot_token = os.getenv("PREDICTION_GENERATOR_BOT_TOKEN")
+```
+Use arrow keys to select options ⬇️ ⬆️
 ```
 
-2. Run the bot
+This indicates that the scraper is running successfully.
 
-Now just paste this command in the terminal:
+You will be prompted to select filters similar to those available on the Scores24 Predictions page. Once the selections are complete, the scraper will create a `raw files` folder inside the Prediction directory.
+
+This folder contains the raw JSON responses fetched using your selected filters. You are free to process or reuse this data as needed.
+
+
+## How to Test the Telegram Bot
+
+The bot setup process is similar to the scraper, but completing the setup is mandatory.
+
+### Step 1: Add Your Bot Token
+
+There are two supported ways to add the bot token.
+
+#### Option 1: Paste the Token Directly
+
+This is the fastest method, but not recommended for production use.
+
+1. Open `Prediction generator bot.py`
+2. Locate and uncomment the line:
+
+   ```python
+   # bot_token = "~~Enter~~your~~bot~~token~~here~~"
+   ```
+3. Replace the placeholder with your actual bot token
+
+Make sure the token is never committed to GitHub.
+
+#### Option 2: Use a `.env` File (Recommended)
+
+1. Create a `.env` file in the root directory
+2. Add the following line and insert your bot token:
+
+   ```
+   PREDICTION_GENERATOR_BOT_TOKEN=""
+   ```
+3. Uncomment these lines in `Prediction generator bot.py`:
+
+   ```python
+   # load_dotenv()
+   # bot_token = os.getenv("PREDICTION_GENERATOR_BOT_TOKEN")
+   ```
+
+
+### Step 2: Run the Bot
+
+Run the following command:
 
 ```bash
 python "Prediction generator bot.py"
 ```
-you'll see something like `telegram.ext.Application - INFO - Application started` in the terminal, it indicates that the bot has started sucessfully.
 
-3. Confirm the bot is initialized
+If you see:
 
-Go to your telegram bot and run the /start command, the bot will reponed.
+```
+telegram.ext.Application - INFO - Application started
+```
 
-Now you can deploy the bot and add new featues to it as your liking.
-
-
-## How the scraper works (for contributors)
-
-The scraper is very simple and flexible as it does not rely on the html rendered on Scores24 instead it utilizes the exposed graphQL API.
-
-Here's a workflow so you really understands what's going under the hood.
-
-1. The scraper starts and a confirmation message to indicate it has started. 
-2. Then it ask users to select some options from the given choices in the terminal through `inquirerpy` package, which are basically the filters one finds on Scores24 prediction page
-3. After the user is done with questionaries, the scraper sends the request with the selcted filters 
-4. Finally, if the Scores24 response is ok, then it saves the raw json in `raw files` folder otherwise it prints an error message with the status code of sent by Scores24.
+the bot has started successfully.
 
 
-## How the bot works (for contributors)
+### Step 3: Confirm the Bot Is Running
 
-On core level, the bot works very similarly to scraper, the only major difference is, instead of using `inquirerpy` to gather filters options form users, the bot utilizes `python-telegram-bot` library and did all the questionaries in the telegram instead of terminal.  
+Open Telegram and send the `/start` command to your bot. If the bot responds, it is working correctly.
 
-1. After the bot is fully initialized, it prints a confirmation message in the terminal.
-2. When the user uses /generate_predictions command the bot starts the questionaries to collect all the fillter data. 
-3. Once the bot have all the nesscary data, it sends a confirmation message to the person interacting with it.
-4. After all the back and forth, it sends a request to Scores24 leaked graphQL endpoint with the selected filters 
-5. Finally, if the Scores24 responds with json, it extracts the useful data and sends the bet slips back to user otherwise it responed with an appropreate error message.
+You can now deploy the bot or extend it with additional features.
 
 
-## License & Usage
+## How the Scraper Works (For Contributors)
 
-* **Non-Commercial:** Free to use for personal or educational projects.
-* **Commercial:** Please provide credit by linking to this repository or my [GitHub profile](https://github.com/byte-dev404).
+The scraper does not rely on rendered HTML. Instead, it communicates directly with Scores24’s exposed GraphQL API.
+
+Workflow overview:
+
+1. The scraper starts and logs a confirmation message.
+2. It prompts the user to select filters using the `InquirerPy` library.
+3. The selected filters are sent to the Scores24 GraphQL endpoint.
+4. If the response is successful, the raw JSON is saved in the `raw files` folder.
+5. If an error occurs, the scraper prints a clear error message with the response status code.
+
+
+## How the Bot Works (For Contributors)
+
+The bot follows the same core logic as the scraper, but replaces terminal input with Telegram interactions using the `python-telegram-bot` library.
+
+Workflow overview:
+
+1. The bot initializes and logs a startup message.
+2. When a user runs `/generate_predictions`, the bot begins collecting filter inputs.
+3. Once all required data is collected, the bot sends a confirmation message.
+4. The bot sends a request to the Scores24 GraphQL endpoint using the selected filters.
+5. If the response is valid, the bot extracts useful data and sends structured prediction slips to the user.
+6. If an error occurs, the bot responds with an appropriate error message.
+
+
+## License and Usage
+
+* **Non-commercial use:** Free for personal or educational projects.
+* **Commercial use:** Please provide credit by linking to this repository or to my [GitHub profile](https://github.com/byte-dev404).
 
 
 ## Contributing
 
-Contributions are welcome! To maintain project quality:
+Contributions are welcome.
 
-1. **Open an Issue** first to discuss the bug or feature.
-2. Ensure your code follows PEP 8 guidelines.
-3. Submit a Pull Request (PR) with a clear description of changes.
+1. Open an issue to discuss bugs or feature ideas.
+2. Follow PEP 8 coding standards.
+3. Submit a pull request with a clear description of your changes.
 
 
 ## Contact
 
-If the scraper breaks, needs customization, or if you want help scraping another website, feel free to reach out.
+If the scraper or bot breaks, needs customization, or if you want help scraping another website, feel free to reach out.
 
-**Email:**
+**Email**
 [zendiagogamingbusiness@gmail.com](mailto:zendiagogamingbusiness@gmail.com)
 
-**LinkedIn:**
+**LinkedIn**
 [https://www.linkedin.com/in/vishwas-batra/](https://www.linkedin.com/in/vishwas-batra/)
