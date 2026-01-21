@@ -186,3 +186,14 @@ Contributions are welcome! To maintain project quality:
 1. **Open an Issue** first to discuss the bug or feature.
 2. Ensure your code follows PEP 8 guidelines.
 3. Submit a Pull Request (PR) with a clear description of changes.
+
+
+## Contact
+
+If the scraper breaks, needs customization, or if you want help scraping another website, feel free to reach out.
+
+**Email:**
+[zendiagogamingbusiness@gmail.com](mailto:zendiagogamingbusiness@gmail.com)
+
+**LinkedIn:**
+[https://www.linkedin.com/in/vishwas-batra/](https://www.linkedin.com/in/vishwas-batra/)
