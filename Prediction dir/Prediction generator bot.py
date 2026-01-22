@@ -282,12 +282,12 @@ async def generate_prediction_command(update: Update, context: ContextTypes.DEFA
     context.user_data["mode"] = None
     context.user_data["time"] = None
 
-    message, chat_id = get_message_and_chat(update)
-    if not chat_id:
+    message, _ = get_message_and_chat(update)
+    if not message:
         return
 
     try:
-        await update.message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
+        await message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
     except TimedOut:
         pass
 
@@ -405,7 +405,6 @@ async def fetch_prediction(query, context):
 
     context.user_data.clear()
 
-
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.channel_post:
@@ -417,16 +416,12 @@ async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id=chat_id, text=unknown_msg)
 
-
 # Error handler
 async def error_handler(update: Optional[Update], context: ContextTypes.DEFAULT_TYPE):
     logging.exception("Unhandled error", exc_info=context.error)
 
     if update and update.effective_chat:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, 
-            text="An internal error occurred. Please try again later."
-            )
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="An internal error occurred. Please try again later.")
 
 def main():
     print("Booting up the bot")
