@@ -282,6 +282,10 @@ async def generate_prediction_command(update: Update, context: ContextTypes.DEFA
     context.user_data["mode"] = None
     context.user_data["time"] = None
 
+    message, chat_id = get_message_and_chat(update)
+    if not chat_id:
+        return
+
     try:
         await update.message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
     except TimedOut:
