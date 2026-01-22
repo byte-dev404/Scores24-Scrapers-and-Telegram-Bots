@@ -256,13 +256,25 @@ def extract_predictions(response_json):
 
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=start_msg)
+    _, chat_id = get_message_and_chat(update)
+    if not chat_id:
+        return
+    
+    await context.bot.send_message(chat_id=chat_id, text=start_msg)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=help_msg)
+    _, chat_id = get_message_and_chat(update)
+    if not chat_id:
+        return
+
+    await context.bot.send_message(chat_id=chat_id, text=help_msg)
 
 async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=contact_msg)
+    _, chat_id = get_message_and_chat(update)
+    if not chat_id:
+        return
+
+    await context.bot.send_message(chat_id=chat_id, text=contact_msg)
 
 # Main prediction command
 async def generate_prediction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
