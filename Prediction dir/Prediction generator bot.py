@@ -103,6 +103,14 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+# Helper func to handle channel post and private messages
+def get_message_and_chat(update: Update):
+    if update.message:
+        return update.message, update.message.chat_id
+    if update.channel_post:
+        return update.channel_post, update.channel_post.chat_id
+    return None, None
+
 # Helper funcs to build keyboard/buttons
 def build_mode_keyboard(selected_mode: Optional[str]):
     keyborad = []
