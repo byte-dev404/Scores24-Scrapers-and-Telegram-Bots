@@ -408,10 +408,15 @@ async def fetch_prediction(query, context):
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.channel_post:
+        return
+
     _, chat_id = get_message_and_chat(update)
     if not chat_id:
         return
+
     await context.bot.send_message(chat_id=chat_id, text=unknown_msg)
+
 
 # Error handler
 async def error_handler(update: Optional[Update], context: ContextTypes.DEFAULT_TYPE):
@@ -451,7 +456,7 @@ def main():
     application.add_handler(unknown_handler)
 
     print("Bot successfully initialized, now listening for inputs...")
-    application.run_polling() # Starts the bot for listening updates/messages
+    application.run_polling(allowed_updates=Update.ALL_TYPES) # Starts the bot for listening updates/messages
 
 if __name__ == "__main__":
     main()
