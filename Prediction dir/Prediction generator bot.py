@@ -103,13 +103,18 @@ json_data = {
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# Helper func to handle channel post and private messages
+# Helper funcs to handle channel post and private messages
 def get_message_and_chat(update: Update):
     if update.message:
         return update.message, update.message.chat_id
     if update.channel_post:
         return update.channel_post, update.channel_post.chat_id
     return None, None
+
+def get_state(context: ContextTypes.DEFAULT_TYPE, update: Update):
+    if update.effective_user:
+        return context.user_data
+    return context.chat_data
 
 # Helper funcs to build keyboard/buttons
 def build_mode_keyboard(selected_mode: Optional[str]):
@@ -278,9 +283,10 @@ async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Main prediction command
 async def generate_prediction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.clear()
-    context.user_data["mode"] = None
-    context.user_data["time"] = None
+    state = get_state(context, update)
+    state.clear()
+    state["mode"] = None
+    state["time"] = None
 
     message, _ = get_message_and_chat(update)
     if not message:
@@ -297,7 +303,8 @@ async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
 
     _, mode = query.data.split(": ")
-    context.user_data["mode"] = mode
+    state = get_state(context, update)
+    state["mode"] = mode
 
     if mode == "Best":
         await query.message.delete()
@@ -318,10 +325,11 @@ async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
 
     user_data = query.data
+    state = get_state(context, update)
 
-    if user_data.startswith("time:"):
-        _, time_value = user_data.split(": ")
-        context.user_data["time"] = time_value
+    if query.data.startswith("time:"):
+        _, time_value = query.data.split(": ")
+        state["time"] = time_value
 
         await query.edit_message_reply_markup(reply_markup=build_time_keyboard(time_value))
         return   
@@ -331,8 +339,8 @@ async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TY
             await query.answer("Select a time option!", show_alert=True)
             return
             
-        context.user_data["sports"] = set()
-        sports_keyboard = build_sports_keyboard(context.user_data["sports"])
+        state["sports"] = set()
+        sports_keyboard = build_sports_keyboard(state["sports"])
 
         await query.edit_message_text(text=f"Now select one or more sports:", reply_markup=sports_keyboard)
         return
@@ -341,16 +349,16 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
     query = update.callback_query
     await query.answer()
 
-    user_data = query.data
-    selected = context.user_data.setdefault("sports", set())
+    state = get_state(context, update)
+    selected = state.setdefault("sports", set())
 
-    if user_data == "sport_next":
+    if query.data == "sport_next":
         await query.message.delete()
         await context.bot.send_message(chat_id=query.message.chat_id, text="Generating bet slips…")
         context.application.create_task(fetch_prediction(query, context))
         return
     
-    _, sport = user_data.split(":", 1)
+    _, sport = query.data.split(":", 1)
     sport = sport.strip()
     if sport == "all":
         selected.clear()
@@ -365,12 +373,11 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
 
 async def fetch_prediction(query, context):
     # run_id = datetime.utcnow().strftime("%Y%m%d-%H%M%S") # Run ID for development only
-    user_data = context.user_data
+    user_data = context.chat_data if not query.from_user else context.user_data
     json_data_copy = json.loads(json.dumps(json_data))
     
     if user_data.get("mode") == "Custom":
         vars = json_data_copy["variables"]
-        logging.info(f"time: {user_data['time']}\n sports: {list(user_data['sports'])}")
 
         if user_data['time'] != "all":
             vars["day"] = user_data['time']
@@ -403,7 +410,7 @@ async def fetch_prediction(query, context):
 
         await context.bot.send_message(chat_id=query.message.chat_id, text=prediction_msg)
 
-    context.user_data.clear()
+    user_data.clear()
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -427,11 +434,14 @@ def main():
     print("Booting up the bot")
     application = ApplicationBuilder().token(bot_token).build()
 
+    # Filter to allows both private/group messages AND channel posts
+    channel_filter = filters.ChatType.CHANNEL | filters.ChatType.GROUPS | filters.ChatType.PRIVATE
+
     # Handlers
-    start_handler = CommandHandler("start", start_command)
-    help_handler = CommandHandler("help", help_command)
-    contact_handler = CommandHandler("contact", contact_command)
-    generate_prediction_handler = CommandHandler("generate_predictions", generate_prediction_command)
+    start_handler = CommandHandler("start", start_command, filters=channel_filter)
+    help_handler = CommandHandler("help", help_command, filters=channel_filter)
+    contact_handler = CommandHandler("contact", contact_command, filters=channel_filter)
+    generate_prediction_handler = CommandHandler("generate_predictions", generate_prediction_command, filters=channel_filter)
     mode_selection_handler = CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)")
     time_selection_handler = CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)")
     sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
