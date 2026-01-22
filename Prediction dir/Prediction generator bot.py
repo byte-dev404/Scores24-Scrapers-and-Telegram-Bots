@@ -408,7 +408,10 @@ async def fetch_prediction(query, context):
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=unknown_msg)
+    _, chat_id = get_message_and_chat(update)
+    if not chat_id:
+        return
+    await context.bot.send_message(chat_id=chat_id, text=unknown_msg)
 
 # Error handler
 async def error_handler(update: Optional[Update], context: ContextTypes.DEFAULT_TYPE):
