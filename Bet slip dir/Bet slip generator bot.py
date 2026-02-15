@@ -1,6 +1,7 @@
 import os
 import json
 import httpx
+from curl_cffi.requests import AsyncSession
 import logging 
 from timezonefinder import TimezoneFinder
 from typing import Optional
@@ -12,8 +13,8 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardR
 from telegram.ext import CallbackQueryHandler, filters, MessageHandler, ApplicationBuilder, ContextTypes, CommandHandler
 
 '''Load your token form .env'''
-# load_dotenv()
-# bot_token = os.getenv("BET_SLIP_GENERATOR_BOT_TOKEN") 
+load_dotenv()
+bot_token = os.getenv("BET_SLIP_GENERATOR_BOT_TOKEN") 
 
 '''Or paste it here but never forget to remove it before commiting to github'''
 # bot_token = "~~Enter~~your~~bot~~token~~here~~" 
@@ -471,8 +472,9 @@ async def fetch_bet_slips_from_scores24(query, context):
     vars["oddTo"] = data["odd_to"]
     vars["events"] = data["events"]
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post('https://scores24.live/graphql', cookies=cookies, headers=headers, json=payload_copy)
+    async with AsyncSession(timeout=30, impersonate="chrome") as session:
+    # async with httpx.AsyncClient(timeout=30) as client:
+        response = await session.post('https://scores24.live/graphql', cookies=cookies, headers=headers, json=payload_copy)
 
     if response.status_code != 200:
         await context.bot.send_message(chat_id=query.message.chat_id, text=f"Scores24 API error, status code: {response.status_code}")
