@@ -1,6 +1,7 @@
 import os
 import json
-import httpx
+# import httpx
+from curl_cffi.requests import AsyncSession
 import logging
 from datetime import datetime
 from typing import Optional
@@ -383,9 +384,10 @@ async def fetch_prediction(query, context):
             vars["day"] = user_data['time']
         if user_data["sports"]:
             vars['sportSlugs'] = list(user_data["sports"])
-
-    async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=30, write=10, pool=10)) as client:
-        response = await client.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
+        
+    async with AsyncSession(timeout=30, impersonate="chrome") as session:
+    # async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=30, write=10, pool=10)) as client:
+        response = await session.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
     
     if response.status_code != 200:
         await context.bot.send_message(chat_id=query.message.chat_id, text=f"Scores24 API error, status code: {response.status_code}")
