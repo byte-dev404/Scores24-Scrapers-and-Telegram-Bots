@@ -208,3 +208,5 @@ __marimo__/
 
 buildenv/
 raw files
+.local
+.local.zip
