@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, "/home/container/.local")
+
 # import os
 import json
 # import httpx
