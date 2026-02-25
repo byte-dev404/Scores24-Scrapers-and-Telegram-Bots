@@ -3,10 +3,8 @@ sys.path.insert(0, "/home/container/.local")
 
 # import os
 import json
-# import httpx
 from curl_cffi.requests import AsyncSession
 import logging
-# from datetime import datetime
 from typing import Optional
 # from dotenv import load_dotenv
 from telegram.error import TimedOut
@@ -33,6 +31,7 @@ unknown_msg = "Sorry, I didn't understand that command, maybe because this comma
 mode_options = ["Best", "Custom"]
 time_options = ["all", "today", "tomorrow"]
 sport_options = ["all", 'soccer', 'ice-hockey', 'basketball', 'tennis', 'futsal', 'mma', 'snooker', 'baseball', 'american-football', 'csgo', 'volleyball', 'rugby', 'handball', 'boxing',]
+
 
 # Exposed api endpoint
 predictions_endpoint = "https://scores24.live/graphql"
@@ -203,7 +202,7 @@ def format_prediction(pred):
 
     return "Unknown prediction"
 
-def extract_predictions(response_json):
+def extract_predictions(response_json, min_confi):
     predictions = []
 
     sport_blocks = response_json.get("data", {}).get("SportPrediction") or []
@@ -223,6 +222,9 @@ def extract_predictions(response_json):
             node = edge.get("node")
             if not isinstance(node, dict): continue
 
+            confidence = node.get("agreedVotesPercent")
+            if confidence is None or not confidence >= min_confi: continue
+
             match = node.get("match") or {}
             if not isinstance(match, dict): continue
 
@@ -235,7 +237,6 @@ def extract_predictions(response_json):
             raw_prediction = node.get("prediction")
             prediction_text = format_prediction(raw_prediction)
             prediction_value = node.get("predictionValue")
-            confidence = node.get("agreedVotesPercent")
             votes = node.get("allVotesCount")
 
             unique_tournament = match.get("uniqueTournament") or {}
@@ -311,9 +312,8 @@ async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TY
     state["mode"] = mode
 
     if mode == "Best":
-        await query.message.delete()
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating best predictions…")
-        context.application.create_task(fetch_prediction(query, context))
+        state["min_confidence"] = None
+        await query.edit_message_text(text="Enter minimum confidence to filter results (0–100):")
         return
     
     if not context.user_data.get("mode"):
@@ -331,8 +331,8 @@ async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TY
     user_data = query.data
     state = get_state(context, update)
 
-    if query.data.startswith("time:"):
-        _, time_value = query.data.split(": ")
+    if user_data.startswith("time:"):
+        _, time_value = user_data.split(": ")
         state["time"] = time_value
 
         await query.edit_message_reply_markup(reply_markup=build_time_keyboard(time_value))
@@ -355,11 +355,10 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
 
     state = get_state(context, update)
     selected = state.setdefault("sports", set())
-
+    
     if query.data == "sport_next":
-        await query.message.delete()
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Generating bet slips…")
-        context.application.create_task(fetch_prediction(query, context))
+        state["min_confidence"] = None
+        await query.edit_message_text(text="Enter minimum confidence to filter results (0–100):")
         return
     
     _, sport = query.data.split(":", 1)
@@ -375,9 +374,32 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
 
     await query.edit_message_reply_markup(reply_markup=build_sports_keyboard(selected))
 
-async def fetch_prediction(query, context):
-    # run_id = datetime.utcnow().strftime("%Y%m%d-%H%M%S") # Run ID for development only
-    user_data = context.chat_data if not query.from_user else context.user_data
+async def handle_confidence_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message or update.channel_post
+    if not message:
+        return
+
+    state = get_state(context, update)
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.reply_text("Please enter a valid number between 0 and 100.")
+        return
+
+    min_confidence = int(text)
+
+    if not (0 <= min_confidence <= 100):
+        await message.reply_text("Confidence must be between 0 and 100.")
+        return
+
+    state["min_confidence"] = min_confidence
+
+    await message.reply_text("Generating bet slips…")
+    context.application.create_task(fetch_prediction(update, context))
+
+async def fetch_prediction(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_data = get_state(context, update)
+    _, chat_id = get_message_and_chat(update)
     json_data_copy = json.loads(json.dumps(json_data))
     
     if user_data.get("mode") == "Custom":
@@ -389,18 +411,17 @@ async def fetch_prediction(query, context):
             vars['sportSlugs'] = list(user_data["sports"])
         
     async with AsyncSession(timeout=30, impersonate="chrome") as session:
-    # async with httpx.AsyncClient(timeout=httpx.Timeout(connect=10, read=30, write=10, pool=10)) as client:
         response = await session.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
     
     if response.status_code != 200:
-        await context.bot.send_message(chat_id=query.message.chat_id, text=f"Scores24 API error, status code: {response.status_code}")
+        await context.bot.send_message(chat_id=chat_id, text=f"Scores24 API error, status code: {response.status_code}")
         return
 
     response_json = response.json()
-    predictions = extract_predictions(response_json)
+    predictions = extract_predictions(response_json, user_data["min_confidence"])
 
     if not predictions:
-        await context.bot.send_message(chat_id=query.message.chat_id, text="No predictions found for the selected filters.")
+        await context.bot.send_message(chat_id=chat_id, text="No predictions found for the selected filters.")
         return
 
     for p in predictions:
@@ -413,7 +434,7 @@ async def fetch_prediction(query, context):
             f"🕒 Match time: {p['match_date']}"
         )
 
-        await context.bot.send_message(chat_id=query.message.chat_id, text=prediction_msg)
+        await context.bot.send_message(chat_id=chat_id, text=prediction_msg)
 
     user_data.clear()
 
@@ -449,6 +470,7 @@ def build_app():
     application.add_handler(CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)"))
     application.add_handler(CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)"))
     application.add_handler(CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)"))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confidence_selection))
 
     application.add_error_handler(error_handler)
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
@@ -470,6 +492,7 @@ def main():
     mode_selection_handler = CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)")
     time_selection_handler = CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)")
     sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
+    confidence_selection_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confidence_selection)
     unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
 
     # Attach handlers to bot
@@ -480,6 +503,7 @@ def main():
     application.add_handler(mode_selection_handler)
     application.add_handler(time_selection_handler)
     application.add_handler(sport_selection_handler)
+    application.add_handler(confidence_selection_handler)
     application.add_error_handler(error_handler)
 
     # Unknow handler must be placed below all other handlers, as it consumes every unhandled command

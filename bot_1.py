@@ -3,7 +3,6 @@ sys.path.insert(0, "/home/container/.local")
 
 import os
 import json
-# import httpx
 from curl_cffi.requests import AsyncSession
 import logging 
 from timezonefinder import TimezoneFinder
@@ -476,7 +475,6 @@ async def fetch_bet_slips_from_scores24(query, context):
     vars["events"] = data["events"]
 
     async with AsyncSession(timeout=30, impersonate="chrome") as session:
-    # async with httpx.AsyncClient(timeout=30) as client:
         response = await session.post('https://scores24.live/graphql', cookies=cookies, headers=headers, json=payload_copy)
 
     if response.status_code != 200:
@@ -496,10 +494,6 @@ async def fetch_bet_slips_from_scores24(query, context):
         match_time = datetime.strptime(match["matchDate"], "%Y-%m-%d %H:%M:%S")
         if match_time > datetime.utcnow() + timedelta(hours=vars["hours"]):
             continue
-
-        if data["market_converted"] != "all":
-            if trend["market"]["category"] != data["market_converted"]:
-                continue
 
         odd = pick_best_odd(trend["odds"])
         if not (data["odd_from"] <= odd <= data["odd_to"]):
