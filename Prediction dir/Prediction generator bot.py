@@ -1,10 +1,11 @@
-# import os
+import os
 import json
 from curl_cffi.requests import AsyncSession
 import logging
 from typing import Optional
 # from dotenv import load_dotenv
 from telegram.error import TimedOut
+from scheduler import schedule_jobs
 from telegram import Update,  InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, filters, MessageHandler
 
@@ -20,7 +21,7 @@ if not bot_token:
 
 # Predefined messages for commands
 start_msg = "Hi, I'm Scores24 Prediction Generator Bot.\nDo /help to see the full list of commands"
-help_msg = "Here's the full list of commands that might help.\n\n/start - To start the conversation with bot\n/help - To see all commands and get help\n/contact - To contact my creator\n/generate_predictions - To generate predictions\n\nIf the above doesn't help, you might wanna contact my creator, for that do /contact"
+help_msg = "Here's the full list of commands that might help.\n\n/start - To start the conversation with bot\n/help - To see all commands and get help\n/contact - To contact my creator\n/config - To configure automatic predictions posting\n\nIf the above doesn't help, you might wanna contact my creator, for that do /contact"
 contact_msg = "Contact my creator Mr. Vishwas Batra,\nHere on LinkedIn: https://www.linkedin.com/in/vishwas-batra/"
 unknown_msg = "Sorry, I didn't understand that command, maybe because this command is not defined.\nContact the developer via /contact command, if you want to add new features."
 
@@ -29,6 +30,7 @@ mode_options = ["Best", "Custom"]
 time_options = ["all", "today", "tomorrow"]
 sport_options = ["all", 'soccer', 'ice-hockey', 'basketball', 'tennis', 'futsal', 'mma', 'snooker', 'baseball', 'american-football', 'csgo', 'volleyball', 'rugby', 'handball', 'boxing',]
 
+config_file = "config.json"
 
 # Exposed api endpoint
 predictions_endpoint = "https://scores24.live/graphql"
@@ -123,7 +125,7 @@ def build_mode_keyboard(selected_mode: Optional[str]):
 
     for mode in mode_options:
         label = f"✅ {mode}" if mode == selected_mode else mode
-        row.append(InlineKeyboardButton(label, callback_data=f"mode: {mode}"))
+        row.append(InlineKeyboardButton(label, callback_data=f"mode:{mode}"))
 
         if len(row) == 2:
             keyborad.append(row)
@@ -139,7 +141,7 @@ def build_time_keyboard(selected_time: Optional[str]):
 
     for time_option in time_options:
         label = f"✅ {time_option}" if time_option == selected_time else f"⬜ {time_option}"
-        row.append(InlineKeyboardButton(label, callback_data=f"time: {time_option}"))
+        row.append(InlineKeyboardButton(label, callback_data=f"time:{time_option}"))
 
         if len(row) == 3:
             keyboard.append(row)
@@ -261,6 +263,15 @@ def extract_predictions(response_json, min_confi):
 
     return predictions
 
+def is_valid_time(value: str) -> bool:
+    try:
+        hour, minute = value.split(":")
+        hour = int(hour)
+        minute = int(minute)
+        return 0 <= hour <= 23 and 0 <= minute <= 59
+    except Exception:
+        return False
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _, chat_id = get_message_and_chat(update)
@@ -283,28 +294,41 @@ async def contact_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await context.bot.send_message(chat_id=chat_id, text=contact_msg)
 
-# Main prediction command
-async def generate_prediction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    state = get_state(context, update)
-    state.clear()
-    state["mode"] = None
-    state["time"] = None
-
-    message, _ = get_message_and_chat(update)
+# Main config command
+async def config_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message
     if not message:
         return
 
-    try:
-        await message.reply_text("Choose a mode for generating prediction:", reply_markup=build_mode_keyboard(None))
-    except TimedOut:
-        pass
+    state = context.user_data
+    state.clear()
+
+    state.update({
+        "mode": None,
+        "time": None,
+        "sports": set(),
+        "min_confidence": None,
+        "post_count": None,
+        "post_times": [],
+        "target_chat_id": None
+    })
+
+    await message.reply_text(
+        "Let’s configure automatic predictions posting.\n\n"
+        "First step: choose how predictions should be generated."
+    )
+
+    await message.reply_text(
+        "Choose a mode:",
+        reply_markup=build_mode_keyboard(None)
+    )
 
 # Follow-up queries handlers for custom prediction
 async def handle_mode_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    _, mode = query.data.split(": ")
+    _, mode = query.data.split(":")
     state = get_state(context, update)
     state["mode"] = mode
 
@@ -329,7 +353,7 @@ async def handle_time_selection(update: Update, context: ContextTypes.DEFAULT_TY
     state = get_state(context, update)
 
     if user_data.startswith("time:"):
-        _, time_value = user_data.split(": ")
+        _, time_value = user_data.split(":")
         state["time"] = time_value
 
         await query.edit_message_reply_markup(reply_markup=build_time_keyboard(time_value))
@@ -371,69 +395,170 @@ async def handle_sport_selection(update: Update, context: ContextTypes.DEFAULT_T
 
     await query.edit_message_reply_markup(reply_markup=build_sports_keyboard(selected))
 
-async def handle_confidence_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message or update.channel_post
+async def handle_numeric_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message = update.message
     if not message:
         return
 
-    state = get_state(context, update)
+    state = context.user_data
     text = message.text.strip()
 
-    if not text.isdigit():
-        await message.reply_text("Please enter a valid number between 0 and 100.")
+    if state.get("min_confidence") is None:
+        if not text.isdigit():
+            await message.reply_text("Please enter a number between 0 and 100.")
+            return
+
+        value = int(text)
+        if not 0 <= value <= 100:
+            await message.reply_text("Confidence must be between 0 and 100.")
+            return
+
+        state["min_confidence"] = value
+        await message.reply_text(
+            "Great.\n\n"
+            "How many times per day should I post predictions?\n"
+            "Example: 1, 2, 3"
+        )
         return
 
-    min_confidence = int(text)
+    if state.get("post_count") is None:
+        if not text.isdigit():
+            await message.reply_text("Please enter a valid number.")
+            return
 
-    if not (0 <= min_confidence <= 100):
-        await message.reply_text("Confidence must be between 0 and 100.")
+        count = int(text)
+        if count <= 0 or count > 10:
+            await message.reply_text("Post count must be between 1 and 10.")
+            return
+
+        state["post_count"] = count
+        state["post_times"] = []
+
+        await message.reply_text(
+            f"Okay.\n\n"
+            f"Send time for post 1 in 24-hour format (HH:MM).\n"
+            f"Example: 09:30"
+        )
         return
 
-    state["min_confidence"] = min_confidence
+    if len(state["post_times"]) < state["post_count"]:
+        if not is_valid_time(text):
+            await message.reply_text(
+                "Invalid time format.\n"
+                "Please use HH:MM in 24-hour format."
+            )
+            return
 
-    await message.reply_text("Generating bet slips…")
-    context.application.create_task(fetch_prediction(update, context))
+        state["post_times"].append(text)
+
+        index = len(state["post_times"])
+        total = state["post_count"]
+
+        if index < total:
+            await message.reply_text(
+                f"Time {index} saved.\n\n"
+                f"Send time for post {index + 1} (HH:MM)."
+            )
+            return
+
+        await message.reply_text(
+            "All post times saved.\n\n"
+            "Now send the target channel ID where I should post predictions.\n"
+            "Tip: paste the numeric channel ID."
+        )
+        return
+
+    if state.get("target_chat_id") is None:
+        try:
+            target_chat_id = int(text)
+        except ValueError:
+            await message.reply_text("Please send a valid numeric channel ID.")
+            return
+
+        state["target_chat_id"] = target_chat_id
+
+        config = {
+            "enabled": True,
+            "mode": state["mode"],
+            "time_filter": state["time"],
+            "sports": list(state["sports"]),
+            "min_confidence": state["min_confidence"],
+            "post_times": state["post_times"]
+        }
+
+        try:
+            save_config(target_chat_id, config)
+        except Exception:
+            await message.reply_text(
+                "Failed to save configuration. Please try again."
+            )
+            return
+
+        await message.reply_text(
+            "Configuration saved successfully.\n\n"
+            "I will now post predictions automatically at the scheduled times."
+        )
+
+        state.clear()
+
+def save_config(target_chat_id: int, config: dict):
+    try:
+        if os.path.exists(config_file):
+            with open(config_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            data = {}
+
+        data[str(target_chat_id)] = config
+
+        with open(config_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+    except Exception as e:
+        logging.exception("Failed to save config")
+        raise e
+
+async def fetch_predictions_core(config: dict):
+    json_data_copy = json.loads(json.dumps(json_data))
+
+    if config.get("mode") == "Custom":
+        vars = json_data_copy["variables"]
+
+        if config.get("time_filter") != "all":
+            vars["day"] = config.get("time_filter")
+
+        if config.get("sports"):
+            vars["sportSlugs"] = config.get("sports")
+
+    async with AsyncSession(timeout=30, impersonate="chrome") as session:
+        response = await session.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
+
+    if response.status_code != 200:
+        raise RuntimeError(f"Scores24 API error: {response.status_code}")
+
+    response_json = response.json()
+    return extract_predictions(response_json, config["min_confidence"])
 
 async def fetch_prediction(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = get_state(context, update)
     _, chat_id = get_message_and_chat(update)
-    json_data_copy = json.loads(json.dumps(json_data))
-    
-    if user_data.get("mode") == "Custom":
-        vars = json_data_copy["variables"]
 
-        if user_data['time'] != "all":
-            vars["day"] = user_data['time']
-        if user_data["sports"]:
-            vars['sportSlugs'] = list(user_data["sports"])
-        
-    async with AsyncSession(timeout=30, impersonate="chrome") as session:
-        response = await session.post(url=predictions_endpoint, cookies=cookies, headers=headers, json=json_data_copy)
-    
-    if response.status_code != 200:
-        await context.bot.send_message(chat_id=chat_id, text=f"Scores24 API error, status code: {response.status_code}")
+    config = {
+        "mode": user_data.get("mode"),
+        "time_filter": user_data.get("time"),
+        "sports": list(user_data.get("sports", [])),
+        "min_confidence": user_data.get("min_confidence"),
+    }
+
+    try:
+        predictions = await fetch_predictions_core(config)
+    except Exception as e:
+        await context.bot.send_message(chat_id=chat_id, text=str(e))
         return
-
-    response_json = response.json()
-    predictions = extract_predictions(response_json, user_data["min_confidence"])
 
     if not predictions:
         await context.bot.send_message(chat_id=chat_id, text="No predictions found for the selected filters.")
         return
-
-    for p in predictions:
-        prediction_msg = (
-            f"⚔️ {p['match']}\n"
-            f"🏆 {p['league']} ({p['country']})\n"
-            f"📊 Prediction: {p['prediction']} ({p['value']})\n"
-            f"📈 Confidence: {p['confidence']}%\n"
-            f"👥 Votes: {p['votes']}\n"
-            f"🕒 Match time: {p['match_date']}"
-        )
-
-        await context.bot.send_message(chat_id=chat_id, text=prediction_msg)
-
-    user_data.clear()
 
 # Handler for all unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -457,17 +582,17 @@ async def error_handler(update: Optional[Update], context: ContextTypes.DEFAULT_
 def build_app():
     application = ApplicationBuilder().token(bot_token).build()
 
-    channel_filter = filters.ChatType.CHANNEL | filters.ChatType.GROUPS | filters.ChatType.PRIVATE
+    private_chat = filters.ChatType.PRIVATE
 
-    application.add_handler(CommandHandler("start", start_command, filters=channel_filter))
-    application.add_handler(CommandHandler("help", help_command, filters=channel_filter))
-    application.add_handler(CommandHandler("contact", contact_command, filters=channel_filter))
-    application.add_handler(CommandHandler("generate_predictions", generate_prediction_command, filters=channel_filter))
+    application.add_handler(CommandHandler("start", start_command, filters=private_chat))
+    application.add_handler(CommandHandler("help", help_command, filters=private_chat))
+    application.add_handler(CommandHandler("contact", contact_command, filters=private_chat))
+    application.add_handler(CommandHandler("config", config_command, filters=private_chat))
 
     application.add_handler(CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)"))
     application.add_handler(CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)"))
     application.add_handler(CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)"))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confidence_selection))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_numeric_input))
 
     application.add_error_handler(error_handler)
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
@@ -476,38 +601,16 @@ def build_app():
 
 def main():
     print("Booting up the bot")
-    application = ApplicationBuilder().token(bot_token).build()
 
-    # Filter to allows both private/group messages AND channel posts
-    channel_filter = filters.ChatType.CHANNEL | filters.ChatType.GROUPS | filters.ChatType.PRIVATE
+    application = build_app()
 
-    # Handlers
-    start_handler = CommandHandler("start", start_command, filters=channel_filter)
-    help_handler = CommandHandler("help", help_command, filters=channel_filter)
-    contact_handler = CommandHandler("contact", contact_command, filters=channel_filter)
-    generate_prediction_handler = CommandHandler("generate_predictions", generate_prediction_command, filters=channel_filter)
-    mode_selection_handler = CallbackQueryHandler(handle_mode_selection, pattern="^(mode:)")
-    time_selection_handler = CallbackQueryHandler(handle_time_selection, pattern="^(time:|time_next)")
-    sport_selection_handler = CallbackQueryHandler(handle_sport_selection, pattern="^(sport:|sport_next)")
-    confidence_selection_handler = MessageHandler(filters.TEXT & ~filters.COMMAND, handle_confidence_selection)
-    unknown_handler = MessageHandler(filters.COMMAND, unknown_command)
+    async def post_init(app):
+        schedule_jobs(app.bot)
 
-    # Attach handlers to bot
-    application.add_handler(start_handler)
-    application.add_handler(help_handler)
-    application.add_handler(contact_handler)
-    application.add_handler(generate_prediction_handler)
-    application.add_handler(mode_selection_handler)
-    application.add_handler(time_selection_handler)
-    application.add_handler(sport_selection_handler)
-    application.add_handler(confidence_selection_handler)
-    application.add_error_handler(error_handler)
-
-    # Unknow handler must be placed below all other handlers, as it consumes every unhandled command
-    application.add_handler(unknown_handler)
+    application.post_init = post_init
 
     print("Bot successfully initialized, now listening for inputs...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES) # Starts the bot for listening updates/messages
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
