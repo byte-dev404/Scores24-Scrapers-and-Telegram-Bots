@@ -1,6 +1,6 @@
 import os
 import json
-import requests
+from curl_cffi import requests
 from InquirerPy import inquirer
 
 
@@ -144,7 +144,7 @@ Here's what you choose:
         },
     }
 
-    response = requests.post(bet_slip_endpoint, cookies=cookies, headers=headers, json=json_data_for_custom_results)
+    response = requests.post(bet_slip_endpoint, cookies=cookies, headers=headers, json=json_data_for_custom_results, impersonate="chrome")
 
     print(response.status_code)
 
