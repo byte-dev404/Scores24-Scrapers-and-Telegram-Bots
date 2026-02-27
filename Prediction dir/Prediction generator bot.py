@@ -5,7 +5,7 @@ import logging
 from typing import Optional
 # from dotenv import load_dotenv
 from telegram.error import TimedOut
-from scheduler import schedule_jobs
+from scheduler import schedule_jobs,  add_channel_jobs
 from telegram import Update,  InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, filters, MessageHandler
 
@@ -488,6 +488,7 @@ async def handle_numeric_input(update: Update, context: ContextTypes.DEFAULT_TYP
 
         try:
             save_config(target_chat_id, config)
+            add_channel_jobs(context.bot, target_chat_id, config)
         except Exception:
             await message.reply_text(
                 "Failed to save configuration. Please try again."

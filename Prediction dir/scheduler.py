@@ -80,6 +80,11 @@ scheduler = AsyncIOScheduler()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def ensure_scheduler_running():
+    if not scheduler.running:
+        scheduler.start()
+        logger.info("Scheduler started dynamically")
+
 def load_config():
     try:
         with open(config_file, "r", encoding="utf-8") as f:
@@ -221,7 +226,28 @@ async def run_scheduled_job(bot: Bot, channel_id: int, config: dict):
     except Exception:
         logger.exception(f"Scheduler job failed for {channel_id}")
 
+def add_channel_jobs(bot: Bot, channel_id: int, config: dict):
+    if not config.get("enabled"):
+        return
+    
+    ensure_scheduler_running()
+    
+    for t in config.get("post_times", []):
+        hour, minute = map(int, t.split(":"))
+
+        scheduler.add_job(
+            run_scheduled_job,
+            CronTrigger(hour=hour, minute=minute),
+            args=[bot, channel_id, config],
+            id=f"{channel_id}_{hour}_{minute}",
+            replace_existing=True
+        )
+
+        logger.info(f"Dynamically scheduled {channel_id} at {hour:02d}:{minute:02d}")
+
+
 def schedule_jobs(bot: Bot):
+    ensure_scheduler_running()
     all_configs = load_config()
 
     if not all_configs:
@@ -248,4 +274,4 @@ def schedule_jobs(bot: Bot):
 
             logger.info(f"Scheduled {channel_id} at {hour:02d}:{minute:02d}")
 
-    scheduler.start()
+    # scheduler.start()
