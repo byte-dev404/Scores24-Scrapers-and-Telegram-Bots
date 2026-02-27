@@ -1,6 +1,7 @@
 import sys
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+import pytz
 
 sys.path.insert(0, "/home/container/.local")
 import json
@@ -79,6 +80,8 @@ config_file = "config.json"
 scheduler = AsyncIOScheduler()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+timezone = pytz.timezone('Etc/GMT-1')
 
 def ensure_scheduler_running():
     if not scheduler.running:
@@ -237,7 +240,7 @@ def add_channel_jobs(bot: Bot, channel_id: int, config: dict):
 
         scheduler.add_job(
             run_scheduled_job,
-            CronTrigger(hour=hour, minute=minute),
+            CronTrigger(hour=hour, minute=minute, timezone=timezone),
             args=[bot, channel_id, config],
             id=f"{channel_id}_{hour}_{minute}",
             replace_existing=True
@@ -266,7 +269,7 @@ def schedule_jobs(bot: Bot):
 
             scheduler.add_job(
                 run_scheduled_job,
-                CronTrigger(hour=hour, minute=minute),
+                CronTrigger(hour=hour, minute=minute, timezone=timezone),
                 args=[bot, channel_id, config],
                 id=f"{channel_id}_{hour}_{minute}",
                 replace_existing=True
