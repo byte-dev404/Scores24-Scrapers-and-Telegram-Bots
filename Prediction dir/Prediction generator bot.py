@@ -597,6 +597,11 @@ def build_app():
     application.add_error_handler(error_handler)
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
 
+    async def post_init(app):
+        schedule_jobs(app.bot)
+
+    application.post_init = post_init
+
     return application
 
 def main():
