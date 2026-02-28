@@ -33,6 +33,7 @@ unknown_msg = "Sorry, I didn't understand that command, maybe because this comma
 mode_options = ["Best", "Custom"]
 time_options = ["all", "today", "tomorrow"]
 sport_options = ["all", 'soccer', 'ice-hockey', 'basketball', 'tennis', 'futsal', 'mma', 'snooker', 'baseball', 'american-football', 'csgo', 'volleyball', 'rugby', 'handball', 'boxing',]
+sport_emojis = {"soccer": "⚽", "football": "⚽", "basketball": "🏀", "tennis": "🎾", "ice-hockey": "🏒", "table-tennis": "🏓", "volleyball": "🏐", "baseball": "⚾", "american-football": "🏈", "rugby": "🏉", "cricket": "🏏", "mma": "🥋", "boxing": "🥊", "snooker": "🎱", "waterpolo": "🤽", "badminton": "🏸", "darts": "🎯", "horse-racing": "🏇"}
 
 config_file = "config.json"
 
@@ -214,6 +215,7 @@ def extract_predictions(response_json, min_confi):
     for sport in sport_blocks:
         if not isinstance(sport, dict): continue
 
+        sport_name = sport.get("name") or sport.get("slug").replcae("-", " ").capitalize() if sport.get("slug") != "MMA" else "MMA"
         items = sport.get("items") or {}
         edges = items.get("edges") or []
 
@@ -254,14 +256,14 @@ def extract_predictions(response_json, min_confi):
             if prediction_text is None and prediction_value is None: continue
 
             predictions.append({
-                "sport": sport.get("name", "Unknown sport"),
+                "sport": sport_name,
                 "match": team_names,
                 "league": league,
                 "country": country,
                 "prediction": prediction_text,
                 "value": prediction_value,
                 "confidence": confidence,
-                "votes": votes,
+                # "votes": votes,
                 "match_date": match_date,
             })
 

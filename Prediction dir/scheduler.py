@@ -10,6 +10,7 @@ from curl_cffi.requests import AsyncSession
 from telegram import Bot
 
 predictions_endpoint = "https://scores24.live/graphql"
+sport_emojis = {"soccer": "⚽", "football": "⚽", "basketball": "🏀", "tennis": "🎾", "ice-hockey": "🏒", "table-tennis": "🏓", "volleyball": "🏐", "baseball": "⚾", "american-football": "🏈", "rugby": "🏉", "cricket": "🏏", "mma": "🥋", "boxing": "🥊", "snooker": "🎱", "waterpolo": "🤽", "badminton": "🏸", "darts": "🎯", "horse-racing": "🏇"}
 
 cookies = {
     'testValue': '1',
@@ -132,6 +133,7 @@ def extract_predictions(response_json, min_confi):
     for sport in sport_blocks:
         if not isinstance(sport, dict): continue
 
+        sport_name = sport.get("name") or sport.get("slug").replcae("-", " ").capitalize() if sport.get("slug") != "MMA" else "MMA"
         items = sport.get("items") or {}
         edges = items.get("edges") or []
 
@@ -168,11 +170,10 @@ def extract_predictions(response_json, min_confi):
 
             match_date = match.get("matchDate")
 
-
             if prediction_text is None and prediction_value is None: continue
 
             predictions.append({
-                "sport": sport.get("name", "Unknown sport"),
+                "sport": sport_name,
                 "match": team_names,
                 "league": league,
                 "country": country,
@@ -212,14 +213,16 @@ async def run_scheduled_job(bot: Bot, channel_id: int, config: dict):
         if not predictions:
             logger.info(f"No predictions for channel {channel_id}")
             return
-
+        
         for p in predictions:
+            sport_emoji = sport_emojis.get(p["sport"].replace(" ", "-").lower(), "🎮")
             prediction_msg = (
+                f"{sport_emoji} {p['sport']}\n"
                 f"⚔️ {p['match']}\n"
                 f"🏆 {p['league']} ({p['country']})\n"
                 f"📊 Prediction: {p['prediction']} ({p['value']})\n"
                 f"📈 Confidence: {p['confidence']}%\n"
-                f"👥 Votes: {p['votes']}\n"
+                # f"👥 Votes: {p['votes']}\n"
                 f"🕒 Match time: {p['match_date']}"
             )
 
