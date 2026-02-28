@@ -274,6 +274,15 @@ def is_valid_time(value: str) -> bool:
     except Exception:
         return False
 
+def is_float(str):
+    try:
+        float(str)
+        return True
+    except ValueError:
+        return False
+    except TypeError:
+        return False
+
 # Basic commnads 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     _, chat_id = get_message_and_chat(update)
@@ -310,6 +319,8 @@ async def config_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "time": None,
         "sports": set(),
         "min_confidence": None,
+        "min_prediction_value": None,
+        "max_prediction_value": None,
         "post_count": None,
         "post_times": [],
         "target_chat_id": None
@@ -416,6 +427,34 @@ async def handle_numeric_input(update: Update, context: ContextTypes.DEFAULT_TYP
             return
 
         state["min_confidence"] = value
+        await message.reply_text("Enter minimum prediction value to filter results (1.1 – 2.9):\n")
+        return
+
+    if state.get("min_prediction_value") is None:
+        if not is_float(text):
+            await message.reply_text("Minimum prediction value must be a valid number.")
+            return
+
+        value = float(text)
+        if not 1.1 < value < 2.9:
+            await message.reply_text("Minimum prediction value must be between 1.1 and 2.9.")
+            return
+        
+        state["min_prediction_value"] = value
+        await message.reply_text(f"Enter maximum prediction value to filter results ({value} – 3):\n")
+        return
+    
+    if state.get("max_prediction_value") is None:
+        if not is_float(text):
+            await message.reply_text("Maximum prediction value must be a valid number.")
+            return
+
+        value = float(text)
+        if not state["min_prediction_value"] <= value < 3:
+            await message.reply_text(f"Maximum prediction value must be between {state['min_prediction_value']} and 3.")
+            return
+        
+        state["max_prediction_value"] = value
         await message.reply_text(
             "Great.\n\n"
             "How many times per day should I post predictions?\n"
@@ -485,6 +524,8 @@ async def handle_numeric_input(update: Update, context: ContextTypes.DEFAULT_TYP
             "time_filter": state["time"],
             "sports": list(state["sports"]),
             "min_confidence": state["min_confidence"],
+            "min_prediction": state["min_prediction_value"],
+            "max_prediction": state["max_prediction_value"],
             "post_times": state["post_times"]
         }
 
