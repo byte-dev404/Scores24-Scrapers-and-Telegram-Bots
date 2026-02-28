@@ -124,7 +124,10 @@ def format_prediction(pred):
 
     return "Unknown prediction"
 
-def extract_predictions(response_json, min_confi):
+def extract_predictions(response_json, config):
+    min_confi = config.get("min_confidence")
+    min_pred = config.get("min_prediction")
+    max_pred = config.get("max_prediction")
     predictions = []
 
     sport_blocks = response_json.get("data", {}).get("SportPrediction") or []
@@ -158,8 +161,13 @@ def extract_predictions(response_json, min_confi):
                 team_names = "Unknown match"
 
             raw_prediction = node.get("prediction")
+
             prediction_text = format_prediction(raw_prediction)
             prediction_value = node.get("predictionValue")
+
+            if prediction_text is None and prediction_value is None: continue
+            if not min_pred < float(prediction_value) < max_pred: continue
+            
             votes = node.get("allVotesCount")
 
             unique_tournament = match.get("uniqueTournament") or {}
@@ -170,7 +178,6 @@ def extract_predictions(response_json, min_confi):
 
             match_date = match.get("matchDate")
 
-            if prediction_text is None and prediction_value is None: continue
 
             predictions.append({
                 "sport": sport_name,
@@ -204,7 +211,7 @@ async def fetch_predictions_core(config: dict):
     if response.status_code != 200:
         raise RuntimeError(f"Scores24 API error: {response.status_code}")
     
-    return extract_predictions(response.json(), config.get("min_confidence"))
+    return extract_predictions(response.json(), config)
 
 async def run_scheduled_job(bot: Bot, channel_id: int, config: dict):
     try:
@@ -220,7 +227,7 @@ async def run_scheduled_job(bot: Bot, channel_id: int, config: dict):
                 f"{sport_emoji} {p['sport']}\n"
                 f"⚔️ {p['match']}\n"
                 f"🏆 {p['league']} ({p['country']})\n"
-                f"📊 Prediction: {p['prediction']} ({p['value']})\n"
+                f"📊 Prediction: {p['prediction']} ({float(p['value']):.2f})\n"
                 f"📈 Confidence: {p['confidence']}%\n"
                 # f"👥 Votes: {p['votes']}\n"
                 f"🕒 Match time: {p['match_date']}"
